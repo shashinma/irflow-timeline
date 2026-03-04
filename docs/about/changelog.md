@@ -91,7 +91,7 @@
 
 - **Process Tree Overhaul** — Redesigned with detection-first analysis
   - 10-column table: Timestamp, Detection, Provider, Event ID, Parent Process, Process, PID, PPID, User, Command Line, Integrity
-  - Chain-based detection using 344 MITRE ATT&CK-mapped rules with reason strings
+  - Chain-based detection using 342 MITRE ATT&CK-mapped rules with reason strings
   - Process type icons (Explorer, Office, Shell, System, Browser)
   - Integrity level decoding (System/High/Medium/Low/Untrusted with color coding)
   - Security Event 4688 support with reversed PID semantics
@@ -223,9 +223,12 @@
 
 ## v0.9.1 — February 2026
 
-- Lateral Movement progress bar for processing feedback
-- Stacking glassmorphism for overlapping histogram sources
-- Histogram upgrades and performance improvements
+### Improvements
+
+- **Lateral Movement progress bar** — visual processing feedback during lateral movement analysis on large datasets
+- **Stacking glassmorphism** — overlapping histogram sources rendered with backdrop blur transparency for clearer multi-source visualizations
+- **Histogram performance** — faster bucket calculation and smoother brush selection on large timelines
+- **Histogram heatmap coloring** — bars colored by event density gradient for quick visual identification of activity spikes
 
 ## v0.9.0 — February 2026
 

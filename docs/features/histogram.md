@@ -31,6 +31,8 @@ The color intensity scales linearly from the minimum to maximum event count acro
 
 ## Brush Selection
 
+![Histogram brush selection filtering events to a specific time range](/dfir-tips/Histogram-Brush-Selection.png)
+
 Click and drag on the histogram to select a time range:
 
 1. A translucent accent overlay with dashed border highlights the selected range
