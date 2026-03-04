@@ -58,9 +58,9 @@ If your timeline contains mixed artifacts (registry, file system, event logs), u
 
 ### 2. Run Burst Analysis to Find Attack Windows
 
-With authentication events filtered, run Burst Analysis to detect spikes.
+With authentication events filtered, run [Burst Analysis](/features/gap-burst-analysis) to detect spikes.
 
-1. Open **Tools > Burst Detection**
+1. Open **Tools > [Burst Detection](/features/gap-burst-analysis)**
 2. Set **Window size** to **1 minute**
 3. Set **Burst factor** to **5x**
 4. Review the results sorted by burst ratio
@@ -75,7 +75,7 @@ If burst analysis returns too many results, increase the burst factor to 10x or 
 
 ### 3. Visualize the Attack with the Histogram
 
-Click the **Histogram** button in the main toolbar and set granularity to **Hour**.
+Click the **[Histogram](/features/histogram)** button in the main toolbar and set granularity to **Hour**.
 
 With your authentication filter still active, the histogram will show clear spikes during the attack windows identified by Burst Analysis. Look for:
 
@@ -89,7 +89,7 @@ Use the histogram's **brush selection** to click and drag over the attack window
 
 With the attack time window selected via the histogram brush:
 
-1. Open **Tools > Stack Values**
+1. Open **Tools > [Stack Values](/features/stacking)**
 2. Stack on the `TargetUserName` column
 3. Sort by **Count (descending)**
 
@@ -120,7 +120,7 @@ The critical question: did the attacker succeed? Look for a **4624 (successful l
 4. Sort by timestamp ascending
 5. Scroll through the sequence: a wall of 4625 failures ending with a 4624 success is the compromise moment
 
-Set up a **Color Rule** to make this pattern visually obvious:
+Set up a **[Color Rule](/features/color-rules)** to make this pattern visually obvious:
 
 - **Red background** for rows where `EventID = 4625`
 - **Green background** for rows where `EventID = 4624`

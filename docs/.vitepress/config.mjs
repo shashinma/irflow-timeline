@@ -4,8 +4,21 @@ export default defineConfig({
   title: 'IRFlow Timeline',
   description: 'High-performance DFIR timeline analysis tool for macOS',
   base: '/irflow-timeline/',
+  lastUpdated: true,
+  sitemap: {
+    hostname: 'https://r3nzsec.github.io/irflow-timeline/'
+  },
   head: [
-    ['link', { rel: 'icon', href: '/irflow-timeline/favicon.ico' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/irflow-timeline/logo.svg' }],
+    ['meta', { property: 'og:title', content: 'IRFlow Timeline' }],
+    ['meta', { property: 'og:description', content: 'High-performance DFIR timeline analysis tool for macOS — search, visualize, and investigate 30GB+ forensic timelines' }],
+    ['meta', { property: 'og:image', content: 'https://r3nzsec.github.io/irflow-timeline/IRFlow-Timeline-Github.png' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:url', content: 'https://r3nzsec.github.io/irflow-timeline/' }],
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { name: 'twitter:title', content: 'IRFlow Timeline' }],
+    ['meta', { name: 'twitter:description', content: 'High-performance DFIR timeline analysis tool for macOS — search, visualize, and investigate 30GB+ forensic timelines' }],
+    ['meta', { name: 'twitter:image', content: 'https://r3nzsec.github.io/irflow-timeline/IRFlow-Timeline-Github.png' }],
     ['script', { 'data-goatcounter': 'https://irflowtimeline.goatcounter.com/count', async: '', src: '//gc.zgo.at/count.js' }]
   ],
   themeConfig: {
@@ -22,9 +35,11 @@ export default defineConfig({
         text: 'v1.0.3-beta',
         items: [
           { text: 'Changelog', link: '/about/changelog' },
+          { text: 'Roadmap', link: '/about/roadmap' },
           { text: 'Credits', link: '/about/credits' }
         ]
-      }
+      },
+      { text: 'Download', link: 'https://github.com/r3nzsec/irflow-timeline/releases' }
     ],
     sidebar: {
       '/getting-started/': [
@@ -80,7 +95,8 @@ export default defineConfig({
           items: [
             { text: 'Keyboard Shortcuts', link: '/reference/keyboard-shortcuts' },
             { text: 'KAPE Profiles', link: '/reference/kape-profiles' },
-            { text: 'Performance Tips', link: '/reference/performance-tips' }
+            { text: 'Performance Tips', link: '/reference/performance-tips' },
+            { text: 'FAQ & Troubleshooting', link: '/reference/faq' }
           ]
         }
       ],
@@ -107,13 +123,16 @@ export default defineConfig({
           items: [
             { text: 'Author', link: '/about/author' },
             { text: 'Changelog', link: '/about/changelog' },
+            { text: 'Roadmap', link: '/about/roadmap' },
             { text: 'Credits', link: '/about/credits' }
           ]
         }
       ]
     },
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/r3nzsec/irflow-timeline' }
+      { icon: 'github', link: 'https://github.com/r3nzsec/irflow-timeline' },
+      { icon: 'x', link: 'https://x.com/r3nzsec' },
+      { icon: 'linkedin', link: 'https://www.linkedin.com/in/renzoncruz/' }
     ],
     search: {
       provider: 'local'

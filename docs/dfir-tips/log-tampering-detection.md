@@ -44,7 +44,7 @@ Before diving into the workflow, familiarize yourself with the Windows Event IDs
 
 Start every anti-forensics investigation by understanding what data you actually have -- and what might be missing.
 
-1. Open **Tools > Log Sources**
+1. Open **Tools > [Log Sources](/features/log-source-coverage)**
 2. Examine the heatmap for each log source across the timeline span
 3. Look for the following patterns:
 
@@ -56,15 +56,15 @@ Start every anti-forensics investigation by understanding what data you actually
 | A source appears only briefly | Attacker may have enabled logging temporarily, or artifact was partially overwritten |
 
 ::: tip Start Here Every Time
-Log Source Coverage should be your first stop. If a critical log source is missing entirely or drops out mid-timeline, every subsequent finding must be interpreted with that gap in mind. Document missing sources before proceeding.
+[Log Source Coverage](/features/log-source-coverage) should be your first stop. If a critical log source is missing entirely or drops out mid-timeline, every subsequent finding must be interpreted with that gap in mind. Document missing sources before proceeding.
 :::
 
 ### 2. Run Gap Analysis on Individual Log Sources
 
-Use Gap Analysis to pinpoint the exact timestamps where logging ceased and resumed.
+Use [Gap Analysis](/features/gap-burst-analysis) to pinpoint the exact timestamps where logging ceased and resumed.
 
 1. Filter the main grid to a single log source (e.g., channel = "Security")
-2. Open **Tools > Gap Analysis**
+2. Open **Tools > [Gap Analysis](/features/gap-burst-analysis)**
 3. Set the gap threshold to a value appropriate for the source:
    - **Security logs:** 5-15 minutes (these should be nearly continuous on active systems)
    - **Sysmon logs:** 5-30 minutes depending on system activity
@@ -77,7 +77,7 @@ Examine the last event before each gap and the first event after. If the pre-gap
 
 ### 3. Search for Log Clearing Events
 
-Use Full-Text Search to find explicit evidence that logs were cleared.
+Use [Full-Text Search](/features/search-filtering) to find explicit evidence that logs were cleared.
 
 1. Press `Cmd+F` to open the search bar
 2. Set the search mode to **FTS**
@@ -142,7 +142,7 @@ The `$STANDARD_INFORMATION` attribute timestamps can be modified by user-mode to
 
 ### 6. Search for Known Anti-Forensic Tools
 
-Use Full-Text Search to sweep the timeline for tool names associated with anti-forensics activity.
+Use [Full-Text Search](/features/search-filtering) to sweep the timeline for tool names associated with anti-forensics activity.
 
 1. Set the search mode to **FTS** or **Mixed**
 2. Search for the following terms individually:

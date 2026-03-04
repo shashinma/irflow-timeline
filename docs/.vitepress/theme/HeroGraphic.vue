@@ -15,7 +15,7 @@
       </div>
       <div class="title-right">
         <span class="brand-name">IRFlow</span>
-        <span class="brand-version">v2.1.2</span>
+        <span class="brand-version">v1.0.3-beta</span>
       </div>
     </div>
 
