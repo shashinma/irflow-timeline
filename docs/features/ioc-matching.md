@@ -1,3 +1,7 @@
+---
+description: Scan timelines for indicators of compromise — hashes, IPs, domains, and 17+ IOC types with inline highlighting.
+---
+
 # IOC Matching
 
 IRFlow Timeline can scan your timeline data for Indicators of Compromise (IOCs), automatically identifying network indicators, file hashes, host artifacts, and other forensic artifacts across all columns. Matched IOCs are highlighted inline in the data grid and auto-tagged per indicator for immediate filtering.

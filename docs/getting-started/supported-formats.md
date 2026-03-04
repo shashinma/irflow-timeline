@@ -1,3 +1,7 @@
+---
+description: Supported forensic file formats in IRFlow Timeline — CSV, TSV, XLSX, EVTX, Plaso, and MFT with auto-detection.
+---
+
 # Supported Formats
 
 IRFlow Timeline supports the most common forensic timeline and log formats used in DFIR investigations.
@@ -115,16 +119,89 @@ Plaso is the forensic timeline format created by the `log2timeline` / `plaso` fr
 For very large Plaso databases (10GB+), consider using `psort` to export a filtered CSV first, as the Plaso reader loads all rows in a single query.
 :::
 
+## Raw $MFT (NTFS Master File Table)
+
+**Extensions:** `.mft`, or any file with `MFT` in the name, or `$MFT` (no extension)
+
+Native binary parsing of raw NTFS Master File Table files. No need to pre-process with MFTECmd — open the raw `$MFT` directly.
+
+### Features
+
+- **Binary parsing** — reads raw MFT records (1024 bytes each) directly from the file
+- **Magic byte detection** — auto-detects raw `$MFT` files by the `FILE0` signature, even without a file extension
+- **Full attribute extraction** — parses `$STANDARD_INFORMATION` (0x10), `$FILE_NAME` (0x30), `$OBJECT_ID`, and `$DATA` attributes
+- **Timestomping detection** — compares SI and FN timestamps, flags files where `SI < FN`
+- **Zone.Identifier extraction** — parses resident ADS content to extract download origin data
+- **Parent path resolution** — two-pass architecture: first pass builds the directory tree, second pass resolves full parent paths
+- **Resident data extraction** — can extract small files stored directly inside MFT records (via Tools → NTFS Artifacts)
+
+### Extracted Columns
+
+| Column | Description |
+|--------|-------------|
+| `EntryNumber` | MFT record number |
+| `FileName` / `Extension` | File name and extension |
+| `ParentPath` | Full resolved directory path |
+| `FileSize` | Logical file size |
+| `IsDirectory` / `InUse` | Directory flag and allocation status |
+| `Created0x10` / `LastModified0x10` / `LastRecordChange0x10` / `LastAccess0x10` | `$STANDARD_INFORMATION` timestamps |
+| `Created0x30` / `LastModified0x30` / `LastRecordChange0x30` / `LastAccess0x30` | `$FILE_NAME` timestamps |
+| `SI<FN` | Timestomping indicator (SI timestamp earlier than FN) |
+| `HasAds` / `IsAds` | Alternate Data Stream flags |
+| `ZoneIdContents` | Zone.Identifier ADS content (download origin) |
+| `SiFlags` / `NameType` | Attribute flags and filename namespace |
+
+### NTFS Artifact Analysis Tools
+
+When a raw `$MFT` is loaded, additional analysis tools become available under Tools → NTFS Artifacts:
+
+- **Extract Resident Data** — extract files stored inside MFT records
+- **Ransomware Analysis** — detect encryption patterns by extension
+- **Timestomping Detector** — find files with manipulated timestamps
+- **File Activity Heatmap** — visualize file creation/modification patterns
+- **ADS Analyzer** — analyze Alternate Data Streams and download origins
+
+## Raw $J (USN Journal)
+
+**Extensions:** Files named `$UsnJrnl:$J`, `$UsnJrnl%3A$J`, `$J`, or files under a `$Extend` directory
+
+Native binary parsing of raw NTFS USN Journal (`$UsnJrnl:$J`) files. Provides a granular record of every file system change.
+
+### Features
+
+- **Binary parsing** — reads USN_RECORD_V2 variable-length records directly
+- **Filename detection** — auto-detects USN Journal files by common naming patterns (`$UsnJrnl`, `$J`, `$Extend`)
+- **Null padding skip** — handles the large null-padded regions typical in raw `$J` extractions
+- **Parent path resolution** — if an MFT is available, resolves parent entry numbers to full paths
+- **Reason flag decoding** — translates USN reason bitmasks to human-readable strings (e.g., `FileCreate|Close`)
+
+### Extracted Columns
+
+| Column | Description |
+|--------|-------------|
+| `Name` / `Extension` | File name and extension |
+| `EntryNumber` / `SequenceNumber` | MFT entry and sequence numbers |
+| `ParentEntryNumber` / `ParentSequenceNumber` | Parent directory MFT reference |
+| `ParentPath` | Resolved parent path (when available) |
+| `UpdateTimestamp` | Timestamp of the change |
+| `UpdateSequenceNumber` | USN record sequence number |
+| `UpdateReasons` | Decoded reason flags (e.g., `DataOverwrite\|Close`) |
+| `FileAttributes` | Decoded file attributes |
+
 ## Format Detection
 
-IRFlow Timeline determines the file format by extension:
+IRFlow Timeline determines the file format by extension and content detection:
 
 ```
-.csv, .tsv, .txt, .log  →  CSV/TSV Parser (auto-detect delimiter)
-.xlsx, .xlsm            →  Excel Streaming Parser (ExcelJS)
-.xls                    →  Legacy Excel Parser (SheetJS)
-.evtx                    →  EVTX Binary Parser
-.plaso                   →  Plaso SQLite Reader
+.csv, .tsv, .txt, .log     →  CSV/TSV Parser (auto-detect delimiter)
+.xlsx, .xlsm                →  Excel Streaming Parser (ExcelJS)
+.xls                        →  Legacy Excel Parser (SheetJS)
+.evtx                       →  EVTX Binary Parser
+.plaso                      →  Plaso SQLite Reader
+.mft / $MFT (FILE0 magic)  →  Raw MFT Binary Parser
+$J / $UsnJrnl (by name)    →  Raw USN Journal Parser
 ```
+
+Files without a recognized extension are auto-detected by name patterns and magic bytes, so raw `$MFT` and `$J` files extracted by forensic tools work without renaming.
 
 All formats feed into the same SQLite-backed data engine, so once imported, all features (search, filter, histogram, process tree, etc.) work identically regardless of the source format.

@@ -1,5 +1,6 @@
 ---
 layout: home
+description: High-performance DFIR timeline analysis tool for macOS — search, visualize, and investigate 30GB+ forensic timelines.
 
 hero:
   name: IRFlow Timeline
@@ -39,6 +40,16 @@ features:
     title: Investigation Workflow
     details: Bookmarks, color-coded tags, conditional formatting with KAPE-aware presets, and full session save/restore.
 ---
+
+## What's New in v1.0.3-beta
+
+- **Attack Pattern Detection** — Automated MITRE ATT&CK-mapped findings for brute force, password spray, credential compromise, Impacket (5 variants), and RMM tool scanning (30 tools)
+- **RDP Session Grouping** — Grouped view mode for RDP sessions with expandable rows by source, target, user, and status
+- **Menu Bar Redesign** — Reorganized File, View, Actions, Tools, and Help menus with glassmorphism styling
+- **Row Checkbox Selection** — Per-row checkboxes with master select-all, invert selection, and copy/export selected rows
+- **Find Duplicates** — Scan any column for duplicate values and filter to matches with one click
+
+[Full changelog →](/about/changelog)
 
 ## What is IRFlow Timeline?
 

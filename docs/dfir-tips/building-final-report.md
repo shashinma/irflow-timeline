@@ -1,3 +1,7 @@
+---
+description: Build polished incident reports from IRFlow Timeline using bookmarks, exports, and HTML report generation.
+---
+
 # Building a Final Report
 
 Every investigation culminates in a report. The analysis work -- the searching, filtering, tagging, and correlating -- only delivers value when it is distilled into a clear, structured document that stakeholders can act on. This guide walks through the process of transforming your IRFlow Timeline investigation into a polished incident report, pulling together bookmarks, tags, merged timelines, exports, and HTML reports into a single deliverable.

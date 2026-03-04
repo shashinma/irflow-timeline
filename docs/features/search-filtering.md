@@ -1,3 +1,7 @@
+---
+description: Five search modes — full-text, regex, fuzzy, LIKE, and mixed — to find evidence across massive forensic timelines.
+---
+
 # Search & Filtering
 
 IRFlow Timeline provides multiple search modes and filter types to help you find exactly what you need in massive timelines.

@@ -1,3 +1,7 @@
+---
+description: Interactive timeline histogram with heatmap coloring, brush-to-filter, and activity spike visualization.
+---
+
 # Histogram
 
 The histogram provides a visual timeline of event distribution, helping you identify activity patterns, quiet periods, and suspicious bursts at a glance.

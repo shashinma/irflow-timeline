@@ -1,3 +1,7 @@
+---
+description: Reconstruct ransomware kill chains — trace initial access through encryption using timeline analysis and process inspection.
+---
+
 # Ransomware Kill Chain Reconstruction
 
 Ransomware incidents demand a structured approach to timeline analysis. The attacker lifecycle -- from initial access through privilege escalation, lateral movement, defense evasion, staging, and encryption -- leaves artifacts spread across dozens of log sources and host forensic images. This guide walks through reconstructing a complete ransomware kill chain using IRFlow Timeline.

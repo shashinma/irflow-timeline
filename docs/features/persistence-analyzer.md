@@ -1,3 +1,7 @@
+---
+description: Persistence Analyzer — detect 30+ Windows persistence techniques with automated risk scoring and MITRE ATT&CK mapping.
+---
+
 # Persistence Analyzer
 
 The Persistence Analyzer automatically scans your timeline data for Windows persistence mechanisms, scoring each finding by risk level and organizing results by category. It supports both EVTX event logs and registry exports, detecting over 30 distinct persistence techniques across services, scheduled tasks, WMI subscriptions, registry autorun keys, and more.

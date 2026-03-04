@@ -1,3 +1,7 @@
+---
+description: Keyboard shortcuts reference for IRFlow Timeline — file operations, navigation, search, and analysis commands.
+---
+
 # Keyboard Shortcuts
 
 ## File Operations

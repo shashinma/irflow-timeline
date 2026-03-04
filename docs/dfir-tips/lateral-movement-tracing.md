@@ -1,3 +1,7 @@
+---
+description: Map attacker lateral movement across endpoints using network graphs, stacking, and process execution analysis.
+---
+
 # Lateral Movement Tracing
 
 Lateral movement is one of the most critical phases to reconstruct during an incident response engagement. Once an attacker gains initial access, they typically authenticate to additional systems using stolen credentials, RDP, PsExec, WMI, or SMB to reach high-value targets such as domain controllers and file servers. This guide walks through a systematic approach to mapping that movement across your environment using IRFlow Timeline.

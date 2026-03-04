@@ -1,3 +1,7 @@
+---
+description: Export timeline data to CSV, XLSX, TSV, and XLS formats, or generate HTML investigation reports.
+---
+
 # Export & Reports
 
 IRFlow Timeline supports exporting filtered data and generating investigation reports.

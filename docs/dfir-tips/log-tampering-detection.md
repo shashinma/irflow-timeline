@@ -1,3 +1,7 @@
+---
+description: Detect log tampering and anti-forensics using gap analysis, log source coverage, and suspicious pattern detection.
+---
+
 # Log Tampering & Anti-Forensics Detection
 
 Attackers frequently attempt to cover their tracks by clearing event logs, stopping logging services, and manipulating file timestamps. This guide walks through a systematic approach to detecting these anti-forensics techniques using IRFlow Timeline.

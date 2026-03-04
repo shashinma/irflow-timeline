@@ -1,3 +1,7 @@
+---
+description: IRFlow Timeline architecture — React UI, Electron main process, SQLite data engine, and streaming parsers.
+---
+
 # Architecture
 
 Technical overview of IRFlow Timeline's architecture for developers and contributors.

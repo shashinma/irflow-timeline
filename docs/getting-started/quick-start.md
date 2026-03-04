@@ -1,3 +1,7 @@
+---
+description: Get started with IRFlow Timeline in minutes — open files, navigate the grid, and run your first search.
+---
+
 # Quick Start
 
 Get up and running with your first timeline analysis in under a minute.

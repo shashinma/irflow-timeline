@@ -1,3 +1,7 @@
+---
+description: KAPE integration — auto-detect and pre-configure display settings for 15+ KAPE and EZ Tools output formats.
+---
+
 # KAPE Integration
 
 IRFlow Timeline automatically detects and pre-configures display settings for output from KAPE and Eric Zimmerman's (EZ) tools, giving you an optimized view from the moment you open a file.

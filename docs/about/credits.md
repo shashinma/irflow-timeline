@@ -1,3 +1,7 @@
+---
+description: Credits and acknowledgments — open source projects and contributors powering IRFlow Timeline.
+---
+
 # Credits
 
 IRFlow Timeline is built on the shoulders of incredible open source projects and the DFIR community.

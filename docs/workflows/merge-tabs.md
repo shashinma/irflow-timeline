@@ -1,3 +1,7 @@
+---
+description: Merge multiple timeline tabs into a unified chronological super-timeline for comprehensive forensic analysis.
+---
+
 # Merging Timelines
 
 IRFlow Timeline can merge multiple open tabs into a single unified timeline, creating a comprehensive super-timeline from diverse log sources.

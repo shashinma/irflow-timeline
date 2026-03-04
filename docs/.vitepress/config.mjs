@@ -25,7 +25,26 @@ export default defineConfig({
     ['meta', { name: 'twitter:title', content: 'IRFlow Timeline' }],
     ['meta', { name: 'twitter:description', content: 'High-performance DFIR timeline analysis tool for macOS — search, visualize, and investigate 30GB+ forensic timelines' }],
     ['meta', { name: 'twitter:image', content: 'https://r3nzsec.github.io/irflow-timeline/IRFlow-Timeline-Github.png' }],
-    ['script', { 'data-goatcounter': 'https://irflowtimeline.goatcounter.com/count', async: '', src: '//gc.zgo.at/count.js' }]
+    ['script', { 'data-goatcounter': 'https://irflowtimeline.goatcounter.com/count', async: '', src: '//gc.zgo.at/count.js' }],
+    ['script', { type: 'application/ld+json' }, JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: 'IRFlow Timeline',
+      description: 'High-performance DFIR timeline analysis tool for macOS. Handles 30GB+ forensic timelines with SQLite-backed virtual scrolling.',
+      operatingSystem: 'macOS',
+      applicationCategory: 'SecurityApplication',
+      url: 'https://r3nzsec.github.io/irflow-timeline/',
+      author: {
+        '@type': 'Person',
+        name: 'Renzon Cruz',
+        url: 'https://x.com/r3nzsec'
+      },
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD'
+      }
+    })]
   ],
   themeConfig: {
     logo: '/logo.svg',

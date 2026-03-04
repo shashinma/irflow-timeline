@@ -1,3 +1,7 @@
+---
+description: Hunt for persistence mechanisms — registry keys, scheduled tasks, services, WMI, and DLL hijacking techniques.
+---
+
 # Persistence Hunting
 
 Persistence is one of the most critical phases of an intrusion to identify. Adversaries establish persistence to maintain access across reboots, credential changes, and partial remediation. This guide walks through a systematic approach to hunting for persistence mechanisms using IRFlow Timeline, covering registry run keys, scheduled tasks, services, WMI subscriptions, and DLL hijacking.

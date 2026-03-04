@@ -1,3 +1,7 @@
+---
+description: Sweep forensic timelines against threat intelligence IOC lists with matching, filtering, and bulk tagging.
+---
+
 # Threat Intel IOC Sweeps
 
 Sweeping a forensic timeline against known Indicators of Compromise (IOCs) is one of the fastest ways to determine whether a host was impacted by a specific threat actor or campaign. IRFlow Timeline lets you load structured IOC lists, match them across every artifact type in your timeline, and tag all hits for downstream reporting.

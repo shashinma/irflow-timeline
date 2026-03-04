@@ -1,3 +1,7 @@
+---
+description: Complete list of auto-detected KAPE and EZ Tools profiles with column configurations and detection criteria.
+---
+
 # KAPE Profiles
 
 Complete list of auto-detected KAPE / EZ Tool profiles with their column configurations.

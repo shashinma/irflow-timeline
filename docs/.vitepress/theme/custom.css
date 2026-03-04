@@ -13,6 +13,27 @@
   --vp-c-tip-3: rgba(232, 93, 42, 0.08);
 }
 
+/* Light mode — warm off-white palette */
+:root:not(.dark) {
+  --vp-c-bg: #faf8f6;
+  --vp-c-bg-alt: #f5f2ef;
+  --vp-c-bg-elv: #ffffff;
+  --vp-c-bg-soft: #f5f2ef;
+
+  --vp-c-border: #e0ddd8;
+  --vp-c-divider: #e0ddd8;
+  --vp-c-gutter: #edeae6;
+
+  --vp-c-text-1: #2c2520;
+  --vp-c-text-2: #5c5752;
+  --vp-c-text-3: #8a8580;
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(135deg, #E85D2A, #F47B50);
+  --vp-home-hero-image-background-image: linear-gradient(135deg, rgba(232, 93, 42, 0.15), rgba(244, 123, 80, 0.08));
+  --vp-home-hero-image-filter: blur(56px);
+}
+
 .dark {
   /* Dark mode — matches app dark theme */
   --vp-c-bg: #0f1114;
@@ -134,4 +155,69 @@
 .dark .VPFooter {
   border-top-color: #2a2d33 !important;
   background-color: #0b0d10 !important;
+}
+
+/* ===== Light mode component styles ===== */
+
+/* Feature cards — light */
+:root:not(.dark) .VPFeature {
+  background-color: #ffffff !important;
+  border-color: #e0ddd8 !important;
+}
+
+:root:not(.dark) .VPFeature:hover {
+  border-color: #E85D2A !important;
+}
+
+/* Table styling — light */
+:root:not(.dark) table {
+  border-color: #e0ddd8;
+}
+
+:root:not(.dark) table th {
+  background-color: #f5f2ef;
+  color: #C44D1E;
+}
+
+:root:not(.dark) table td {
+  border-color: #e0ddd8;
+}
+
+:root:not(.dark) table tr:nth-child(even) {
+  background-color: #f5f2ef;
+}
+
+/* Hero glow — light */
+:root:not(.dark) .VPHero .image-bg {
+  background: radial-gradient(circle, rgba(232, 93, 42, 0.12) 0%, transparent 70%);
+}
+
+/* Footer — light */
+:root:not(.dark) .VPFooter {
+  border-top-color: #e0ddd8 !important;
+  background-color: #f5f2ef !important;
+}
+
+/* Scrollbar — light */
+:root:not(.dark) ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:root:not(.dark) ::-webkit-scrollbar-track {
+  background: #f5f2ef;
+}
+
+:root:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #d5d2cd;
+  border-radius: 4px;
+}
+
+:root:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: #E85D2A;
+}
+
+/* Code tabs — light */
+:root:not(.dark) .vp-code-group .tabs label.active {
+  color: #E85D2A !important;
 }

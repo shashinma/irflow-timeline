@@ -1,3 +1,7 @@
+---
+description: Multi-tab analysis — open multiple forensic files simultaneously for cross-source correlation and parallel investigation.
+---
+
 # Multi-Tab Analysis
 
 IRFlow Timeline supports opening multiple files simultaneously in separate tabs, enabling cross-source correlation and parallel investigation.

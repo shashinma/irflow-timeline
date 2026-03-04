@@ -1,3 +1,7 @@
+---
+description: Conditional color formatting with DFIR presets for PowerShell, Mimikatz, PsExec, and other forensic indicators.
+---
+
 # Color Rules
 
 Color rules apply conditional formatting to grid cells, making patterns and anomalies visually obvious at a glance.

@@ -1,3 +1,7 @@
+---
+description: Log source coverage map — Gantt-style visualization of evidence collection spans and gaps across log sources.
+---
+
 # Log Source Coverage
 
 Log Source Coverage provides a Gantt-style visualization of which log sources are present across your timeline, their time spans, and event counts — helping you identify collection gaps and verify evidence completeness.

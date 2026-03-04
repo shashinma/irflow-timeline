@@ -1,3 +1,7 @@
+---
+description: Lateral Movement Tracker — interactive network graph with RDP session correlation and MITRE ATT&CK detection.
+---
+
 # Lateral Movement Tracker
 
 The Lateral Movement Tracker visualizes network logon activity across your environment as an interactive force-directed graph, with built-in RDP session correlation, detection rules, and multi-hop chain reconstruction to help you detect and trace attacker movement between systems.

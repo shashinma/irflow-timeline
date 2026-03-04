@@ -1,3 +1,7 @@
+---
+description: Virtual scrolling data grid with SQLite pagination — view and interact with millions of timeline rows at native speed.
+---
+
 # Virtual Grid
 
 The data grid is the primary interface for viewing and interacting with timeline data. It uses virtual scrolling backed by SQLite pagination to handle millions of rows without performance degradation.

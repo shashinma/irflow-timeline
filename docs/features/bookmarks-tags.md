@@ -1,3 +1,7 @@
+---
+description: Bookmark important rows and tag evidence with DFIR categories to build your investigation narrative.
+---
+
 # Bookmarks & Tags
 
 Bookmarks and tags are the core annotation tools for building your investigation narrative within IRFlow Timeline.

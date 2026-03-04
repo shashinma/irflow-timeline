@@ -1,3 +1,7 @@
+---
+description: Gap and burst analysis — detect unusual inactivity periods or suspicious activity spikes in forensic timelines.
+---
+
 # Gap & Burst Analysis
 
 Gap and burst analysis help you identify temporal anomalies in your timeline — periods of unusual inactivity or suspicious spikes of activity.

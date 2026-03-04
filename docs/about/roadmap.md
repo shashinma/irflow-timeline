@@ -1,3 +1,7 @@
+---
+description: IRFlow Timeline roadmap — planned features, upcoming enhancements, and how to contribute via GitHub.
+---
+
 # Roadmap
 
 This page outlines the planned direction for IRFlow Timeline. Priorities may shift based on community feedback and real-world investigation needs. Have a feature request? [Open an issue](https://github.com/r3nzsec/irflow-timeline/issues) on GitHub.

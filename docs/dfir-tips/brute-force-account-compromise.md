@@ -1,3 +1,7 @@
+---
+description: Detect brute force and password spray attacks using burst analysis, histogram visualization, and account stacking.
+---
+
 # Brute Force & Account Compromise Detection
 
 Brute force and password spraying attacks generate distinctive authentication patterns that are straightforward to detect when you know what to look for. This guide walks through a systematic approach to identifying these attacks, isolating the compromised account, and building a timeline of attacker activity using IRFlow Timeline.

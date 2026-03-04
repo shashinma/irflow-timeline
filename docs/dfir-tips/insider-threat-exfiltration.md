@@ -1,3 +1,7 @@
+---
+description: Investigate insider threats — correlate file access, cloud uploads, and removable media for exfiltration detection.
+---
+
 # Insider Threat: Unauthorized Data Access and Exfiltration
 
 Insider threat investigations require correlating file access patterns, folder navigation, cloud upload activity, and removable media usage across multiple forensic artifact types. IRFlow Timeline's Multi-Tab workspace lets you load MFT entries, ShellBags, browser history, and Jump Lists side by side, then use the Histogram to surface after-hours activity and Date Filters to isolate the suspect's notice period.

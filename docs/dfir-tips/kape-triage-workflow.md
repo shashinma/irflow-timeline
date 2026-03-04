@@ -1,3 +1,7 @@
+---
+description: KAPE triage workflow — structured 30-minute process from collection to findings using IRFlow Timeline.
+---
+
 # KAPE Triage Workflow: 30 Minutes to Findings
 
 A structured approach to triaging KAPE collection output in IRFlow Timeline, broken into six five-minute blocks. By the end of this workflow you will have identified anomalies, traced execution chains, mapped lateral movement, matched known indicators, and saved your tagged findings for reporting.

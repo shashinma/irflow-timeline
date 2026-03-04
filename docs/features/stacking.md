@@ -1,3 +1,7 @@
+---
+description: Value stacking — frequency analysis charts for any column to surface rare or anomalous values in forensic data.
+---
+
 # Stacking
 
 Stacking provides frequency analysis of unique values in any column, presented as bar charts. This technique is fundamental to DFIR analysis — unusual or rare values often indicate malicious activity.

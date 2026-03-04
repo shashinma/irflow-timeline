@@ -1,3 +1,7 @@
+---
+description: Install IRFlow Timeline on macOS — system requirements, download links, and setup for Intel and Apple Silicon.
+---
+
 # Installation
 
 ## System Requirements

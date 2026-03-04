@@ -1,3 +1,7 @@
+---
+description: Process Inspector — visualize parent-child process trees from Sysmon and Security logs with threat detection scoring.
+---
+
 # Process Inspector
 
 The Process Inspector visualizes parent-child process relationships from Sysmon Event ID 1 and Windows Security Event ID 4688 (Process Create) logs, providing a hierarchical view of execution chains with automatic suspicious pattern detection and detailed process analysis.

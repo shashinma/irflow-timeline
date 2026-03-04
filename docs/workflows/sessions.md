@@ -1,3 +1,7 @@
+---
+description: Save and restore complete investigation state — tabs, filters, bookmarks, tags, and settings in .tle session files.
+---
+
 # Sessions
 
 Sessions let you save and restore your complete analysis state, including all open tabs, filters, bookmarks, tags, and customizations.

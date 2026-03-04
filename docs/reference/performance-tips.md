@@ -1,3 +1,7 @@
+---
+description: Performance optimization tips for IRFlow Timeline — streaming architecture, memory management, and large file handling.
+---
+
 # Performance Tips
 
 IRFlow Timeline is engineered for large datasets, but these tips will help you get the best performance.

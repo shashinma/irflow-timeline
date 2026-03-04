@@ -1,3 +1,7 @@
+---
+description: IRFlow Timeline changelog — version history, new features, performance improvements, and bug fixes.
+---
+
 # Changelog
 
 ## v1.0.3-beta — March 1, 2026

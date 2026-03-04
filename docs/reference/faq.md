@@ -1,3 +1,7 @@
+---
+description: FAQ and troubleshooting for IRFlow Timeline — common questions about macOS compatibility, licensing, and usage.
+---
+
 # FAQ & Troubleshooting
 
 ## General Questions
