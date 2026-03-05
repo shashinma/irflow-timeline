@@ -71,6 +71,7 @@ export default defineConfig({
         {
           text: 'Getting Started',
           items: [
+            { text: 'Interactive Demo', link: '/getting-started/demo' },
             { text: 'Installation', link: '/getting-started/installation' },
             { text: 'Quick Start', link: '/getting-started/quick-start' },
             { text: 'Supported Formats', link: '/getting-started/supported-formats' },
