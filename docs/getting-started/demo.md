@@ -23,6 +23,14 @@ The 50 events above tell the story of a complete attack chain across 7 phases:
 | **Persistence** | 36–40 | Registry Run key, service install, scheduled tasks |
 | **Impact** | 41–50 | Shadow delete, ransomware encryption, log clearing |
 
+## Timeline Histogram
+
+The histogram above the grid buckets events by minute (03:10–03:27). It updates live as you search — try "mimikatz" to see activity spike at 03:15, or "DC01" to watch it shift to the 03:18+ lateral movement window. The **burst label** dynamically identifies the densest 3-minute window.
+
+## Process Inspector
+
+The process tree below the grid reconstructs the attack chain from Sysmon Event ID 1 (process creation). Each node shows the parent-child relationship, with **MITRE ATT&CK technique IDs** (blue badges) and **threat labels** (red badges) on suspicious processes. The tree tells the classic phishing-to-ransomware story: `explorer.exe → outlook.exe → WINWORD.EXE → cmd.exe → powershell.exe → mimikatz/PsExec/procdump`.
+
 ## Search Modes
 
 | Mode | How It Works | Example |
@@ -47,6 +55,7 @@ Click any node in the graph to highlight its connections.
 - **Click column headers** to sort ascending, click again for descending, third click to reset
 - **Click any row** to expand full details (especially useful on mobile)
 - **Press Escape** to clear the search field
+- The **histogram** updates reactively as you search — watch the burst detection shift
 - The **sparkline** in the results bar updates live to show event density as you filter
 - **Click graph nodes** to highlight connections in the lateral movement tracker
 

@@ -92,6 +92,26 @@
         </div>
       </div>
 
+      <!-- Timeline Histogram -->
+      <div class="histogram-section">
+        <div class="histogram-bars">
+          <div v-for="(v, i) in histBuckets" :key="'hb' + i" class="hist-bar-wrapper">
+            <div class="hist-bar" :style="{
+              height: histogramAnim ? `${(v / histMax) * 48}px` : '0px',
+              background: v / histMax > 0.7 ? '#E8613A' : v / histMax > 0.4 ? '#D4472A' : '#E8613A44',
+              transitionDelay: `${i * 15}ms`,
+            }">
+              <div v-if="v / histMax > 0.8" class="hist-alert-dot" />
+            </div>
+          </div>
+        </div>
+        <div class="histogram-labels">
+          <span class="hist-label">03:10</span>
+          <span class="hist-alert">&#x25B2; BURST: {{ burstLabel }}</span>
+          <span class="hist-label">03:27</span>
+        </div>
+      </div>
+
       <!-- Data grid -->
       <div class="grid-container">
         <div class="grid-header">
@@ -147,6 +167,28 @@
           <div v-if="sortedRows.length === 0" class="grid-empty">
             No events match your search.
           </div>
+        </div>
+      </div>
+
+      <!-- Process Inspector -->
+      <div class="process-section" :style="{ opacity: showTree ? 1 : 0, transform: showTree ? 'translateY(0)' : 'translateY(10px)' }">
+        <div class="process-header">
+          <span class="panel-title">PROCESS INSPECTOR</span>
+          <span class="panel-badge badge-orange">SYSMON EID 1</span>
+        </div>
+        <div v-for="(proc, i) in processTree" :key="'pt' + i" class="tree-node" :style="{
+          paddingLeft: `${proc.depth * 18}px`,
+          opacity: showTree ? 1 : 0,
+          transitionDelay: `${i * 80}ms`,
+        }">
+          <span v-if="proc.depth > 0" class="tree-branch">{{ '\u2502 '.repeat(proc.depth - 1) }}\u251C\u2500</span>
+          <span class="tree-name" :class="{
+            'tree-suspicious': proc.suspicious,
+            'tree-danger': proc.name === 'mimikatz.exe',
+          }">{{ proc.name }}</span>
+          <span class="tree-pid">:{{ proc.pid }}</span>
+          <span v-if="proc.tag" class="tree-mitre">{{ proc.tag }}</span>
+          <span v-if="proc.badge" class="tree-lolbin">{{ proc.badge }}</span>
         </div>
       </div>
 
@@ -371,6 +413,8 @@ const animatedRows = ref(0)
 const searchInput = ref(null)
 const isMobile = ref(false)
 const showLateral = ref(false)
+const histogramAnim = ref(false)
+const showTree = ref(false)
 const selectedNode = ref(null)
 
 // ── Lateral Movement Graph Data ──
@@ -395,6 +439,20 @@ const latEdges = [
 function selectNode(id) {
   selectedNode.value = selectedNode.value === id ? null : id
 }
+
+// ── Process Tree Data ──
+const processTree = [
+  { name: 'explorer.exe',     pid: 1204, depth: 0, suspicious: false },
+  { name: 'outlook.exe',      pid: 2108, depth: 1, suspicious: false },
+  { name: 'WINWORD.EXE',      pid: 3456, depth: 2, suspicious: false },
+  { name: 'cmd.exe',          pid: 5528, depth: 3, suspicious: true,  tag: 'T1059.003' },
+  { name: 'powershell.exe',   pid: 6744, depth: 4, suspicious: true,  tag: 'T1059.001' },
+  { name: 'whoami.exe',       pid: 7012, depth: 5, suspicious: false },
+  { name: 'net.exe',          pid: 7180, depth: 5, suspicious: true,  tag: 'T1087.002' },
+  { name: 'mimikatz.exe',     pid: 7344, depth: 5, suspicious: true,  tag: 'T1003.001', badge: 'CREDENTIAL DUMP' },
+  { name: 'PsExec.exe',       pid: 7520, depth: 5, suspicious: true,  tag: 'T1570',    badge: 'LATERAL TOOL' },
+  { name: 'procdump.exe',     pid: 7688, depth: 5, suspicious: true,  tag: 'T1003.001', badge: 'LSASS DUMP' },
+]
 
 // ── Sample Data: 50 rows telling an attack story ──
 const SAMPLE_DATA = [
@@ -647,6 +705,37 @@ const sparklineAreaPoints = computed(() => {
   return `0,${h + 2} ${top} ${w},${h + 2}`
 })
 
+// ── Histogram (reactive, computed from filteredRows) ──
+const histBuckets = computed(() => {
+  const rows = filteredRows.value
+  // 18 buckets: one per minute from 03:10 to 03:27
+  const buckets = new Array(18).fill(0)
+  rows.forEach(row => {
+    const match = row.Timestamp.match(/:(\d{2}):/)
+    if (match) {
+      const minute = parseInt(match[1], 10)
+      const idx = minute - 10 // 03:10 = index 0, 03:27 = index 17
+      if (idx >= 0 && idx < 18) buckets[idx]++
+    }
+  })
+  return buckets
+})
+
+const histMax = computed(() => Math.max(...histBuckets.value, 1))
+
+const burstLabel = computed(() => {
+  const b = histBuckets.value
+  // Find densest 3-minute window
+  let maxSum = 0, maxStart = 0
+  for (let i = 0; i <= b.length - 3; i++) {
+    const sum = b[i] + b[i + 1] + b[i + 2]
+    if (sum > maxSum) { maxSum = sum; maxStart = i }
+  }
+  const startMin = maxStart + 10
+  const endMin = startMin + 2
+  return `03:${String(startMin).padStart(2, '0')}\u201303:${String(endMin).padStart(2, '0')} (${maxSum} events)`
+})
+
 // ── Scan line animation ──
 let scanIv = null
 let resizeHandler = null
@@ -661,6 +750,8 @@ onMounted(() => {
 
   if (prefersReducedMotion) {
     animatedRows.value = SAMPLE_DATA.length
+    histogramAnim.value = true
+    showTree.value = true
     showLateral.value = true
     return
   }
@@ -673,7 +764,9 @@ onMounted(() => {
     if (count >= SAMPLE_DATA.length) clearInterval(rowTimer)
   }, 30)
 
-  // Show lateral movement panel after rows load
+  // Animation sequencing
+  setTimeout(() => { histogramAnim.value = true }, 300)
+  setTimeout(() => { showTree.value = true }, 500)
   setTimeout(() => { showLateral.value = true }, 800)
 
   // Scan line
@@ -1026,6 +1119,90 @@ watch(searchQuery, () => { expandedRow.value = null })
 .status-green { color: #28C840; margin-right: 4px !important; }
 .status-accent { font-size: 9px; color: #E8613A; line-height: 1; white-space: nowrap; }
 
+/* ── Histogram ── */
+.histogram-section {
+  padding: 12px 24px 0 !important;
+  border-bottom: 1px solid #222;
+}
+.histogram-bars {
+  display: flex;
+  align-items: flex-end;
+  height: 52px;
+  gap: 1.5px;
+}
+.hist-bar-wrapper { flex: 1; display: flex; align-items: flex-end; }
+.hist-bar {
+  width: 100%;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+.hist-alert-dot {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #FF3B3B;
+  box-shadow: 0 0 6px #FF3B3B88;
+}
+.histogram-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0 8px !important;
+}
+.hist-label { font-size: 9px; color: #777; line-height: 1; }
+.hist-alert { font-size: 9px; color: #E8613A; font-weight: 600; line-height: 1; }
+
+/* ── Process Inspector ── */
+.process-section {
+  padding: 16px 24px !important;
+  border-top: 1px solid #222;
+  transition: all 0.5s ease;
+}
+.process-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.panel-title { font-size: 10px; color: #777; letter-spacing: 1.2px; font-weight: 600; line-height: 1; }
+.panel-badge { font-size: 9px; padding: 2px 8px !important; border-radius: 3px; line-height: 1; }
+.badge-orange { color: #E8613A; background: #E8613A15; }
+.tree-node {
+  display: flex;
+  align-items: center;
+  margin-bottom: 3px;
+  transition: opacity 0.3s ease;
+}
+.tree-branch { color: #555; font-size: 11px; margin-right: 6px !important; white-space: pre; line-height: 1; }
+.tree-name { font-size: 11px; color: #888; line-height: 1; }
+.tree-suspicious { color: #E8613A; font-weight: 600; }
+.tree-danger { color: #FF3B3B !important; }
+.tree-pid { font-size: 9px; color: #777; margin-left: 8px !important; line-height: 1; }
+.tree-mitre {
+  font-size: 8px;
+  color: #58a6ff;
+  background: #58a6ff15;
+  padding: 1px 6px !important;
+  border-radius: 2px;
+  margin-left: 8px !important;
+  line-height: 1;
+}
+.tree-lolbin {
+  font-size: 8px;
+  color: #FF3B3B;
+  margin-left: 8px !important;
+  background: #FF3B3B18;
+  padding: 1px 6px !important;
+  border-radius: 2px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 /* ── Lateral Movement Tracker ── */
 .lateral-section {
   border-top: 1px solid #222;
@@ -1231,6 +1408,7 @@ watch(searchQuery, () => { expandedRow.value = null })
 }
 
 @media (max-width: 640px) {
+  .histogram-section { display: none; }
   .lateral-finding { flex-direction: column; gap: 6px; }
   .lateral-stats { display: grid; grid-template-columns: 1fr 1fr; }
   .lateral-patterns { overflow-x: auto; flex-wrap: nowrap; }
@@ -1251,6 +1429,10 @@ watch(searchQuery, () => { expandedRow.value = null })
 @media (prefers-reduced-motion: reduce) {
   .scan-line { display: none; }
   .grid-row { transition: none !important; opacity: 1 !important; transform: none !important; }
+  .hist-bar { transition: none !important; }
+  .hist-alert-dot { box-shadow: none; }
+  .process-section { transition: none !important; opacity: 1 !important; transform: none !important; }
+  .tree-node { transition: none !important; opacity: 1 !important; }
   .lateral-section { transition: none !important; opacity: 1 !important; transform: none !important; }
   .outlier-pulse { animation: none !important; }
   .badge-red { animation: none !important; }
