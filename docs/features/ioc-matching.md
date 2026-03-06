@@ -175,3 +175,10 @@ Review matches in context. Common internal IPs or system paths may match IOC pat
 ::: tip Defanged IOC Lists
 Paste IOC lists directly from threat intel reports — defanged notation like `hxxps[://]`, `[.]`, and `[dot]` is automatically cleaned before scanning.
 :::
+
+## See Also
+
+- [Bookmarks & Tags](/features/bookmarks-tags) — IOC matches auto-create per-IOC tags for categorization
+- [Process Inspector](/features/process-tree) — trace processes associated with matched indicators
+- [Lateral Movement Tracker](/features/lateral-movement) — correlate network IOCs with lateral movement patterns
+- [Persistence Analyzer](/features/persistence-analyzer) — match persisted executables against your IOC list

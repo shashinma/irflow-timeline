@@ -97,3 +97,9 @@ When merging multiple timelines, check coverage to ensure overlapping time range
 ::: tip Compare Host-by-Host
 In merged multi-host timelines, filter to each host before running coverage analysis. This reveals per-host collection quality and helps identify hosts with incomplete evidence.
 :::
+
+## See Also
+
+- [Gap & Burst Analysis](/features/gap-burst-analysis) — detect anomalous gaps and bursts within covered time ranges
+- [Histogram](/features/histogram) — visualize event distribution across the timeline
+- [Merging Timelines](/workflows/merge-tabs) — merge sources before running coverage to see the full picture

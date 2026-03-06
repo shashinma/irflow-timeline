@@ -419,3 +419,10 @@ Add custom rules to detect environment-specific lateral movement patterns. For e
 ::: tip Combine with Timeline
 After identifying suspicious connections in the graph, click through to the main grid to see the full context of those logon events in the timeline.
 :::
+
+## See Also
+
+- [Process Inspector](/features/process-tree) — trace what processes executed on hosts reached via lateral movement
+- [Persistence Analyzer](/features/persistence-analyzer) — detect persistence installed after each lateral movement hop
+- [IOC Matching](/features/ioc-matching) — scan for network indicators tied to known threat actors
+- [Gap & Burst Analysis](/features/gap-burst-analysis) — identify authentication bursts that signal brute force or spray attacks

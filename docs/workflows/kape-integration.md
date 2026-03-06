@@ -76,3 +76,10 @@ If auto-detection doesn't trigger (e.g., modified column names), you can't curre
 ::: tip Best Practice
 When exporting from EZ Tools, use the default column configurations to ensure IRFlow Timeline recognizes the output format. Custom column selections may prevent auto-detection.
 :::
+
+## See Also
+
+- [Color Rules](/features/color-rules) — KAPE profiles auto-apply color rule presets per tool
+- [Merging Timelines](/workflows/merge-tabs) — merge multiple KAPE tool outputs into a unified timeline
+- [Virtual Grid](/features/virtual-grid) — auto-configured column layouts for each KAPE profile
+- [KAPE Profiles Reference](/reference/kape-profiles) — full list of supported profiles and column mappings

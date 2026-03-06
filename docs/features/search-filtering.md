@@ -130,3 +130,11 @@ IRFlow Timeline caches the 4 most recent search queries per tab. When switching 
 Toggle the highlight button in the search bar to visually highlight matching terms within the grid cells. Matched text is marked with a yellow/amber background for easy identification.
 
 When [IOC Matching](/features/ioc-matching) highlights are also active, both work simultaneously — IOC matches appear in orange and search matches appear in amber, so you can distinguish between the two at a glance.
+
+## See Also
+
+- [Virtual Grid](/features/virtual-grid) — the core data interface where search results are displayed
+- [Bookmarks & Tags](/features/bookmarks-tags) — tag search results for later review
+- [Histogram](/features/histogram) — brush-select a time range to filter before searching
+- [Stacking](/features/stacking) — frequency analysis to find outliers before targeted searching
+- [IOC Matching](/features/ioc-matching) — scan against threat intel indicator lists

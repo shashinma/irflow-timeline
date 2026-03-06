@@ -277,3 +277,11 @@ The Tags column is a full first-class grid column displaying color-coded tag pil
 | **Stale request prevention** | Monotonic fetch IDs discard out-of-order responses |
 | **Min column width** | 60px |
 | **Group batch size** | 100,000 rows per expand |
+
+## See Also
+
+- [Search & Filtering](/features/search-filtering) — text, regex, fuzzy, FTS, and mixed search across the grid
+- [Bookmarks & Tags](/features/bookmarks-tags) — annotate and categorize rows during investigation
+- [Color Rules](/features/color-rules) — conditional formatting with KAPE-aware presets
+- [Histogram](/features/histogram) — temporal event distribution with brush-to-filter
+- [Stacking](/features/stacking) — frequency analysis on any column

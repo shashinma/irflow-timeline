@@ -107,3 +107,10 @@ HTML reports include:
 - Tag breakdown chips showing each tag and its count
 - Grouped tables showing rows organized by tag
 - Color-coded tag indicators matching the in-app palette
+
+## See Also
+
+- [Color Rules](/features/color-rules) — conditional formatting to visually highlight patterns
+- [IOC Matching](/features/ioc-matching) — auto-creates per-IOC tags on matched rows
+- [Export & Reports](/workflows/export-reports) — tagged rows appear grouped in HTML reports
+- [Sessions](/workflows/sessions) — bookmarks and tags persist across session save/restore

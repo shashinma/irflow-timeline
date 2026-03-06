@@ -77,3 +77,10 @@ Each tab creates its own SQLite database. For very large investigations (10+ tab
 ::: tip Tab Naming
 Tabs are named after the source filename. Use descriptive filenames for your evidence files to make tab navigation easier.
 :::
+
+## See Also
+
+- [Merging Timelines](/workflows/merge-tabs) — combine multiple tabs into a single unified timeline
+- [Search & Filtering](/features/search-filtering) — cross-tab search finds matches across all open tabs
+- [Sessions](/workflows/sessions) — save and restore your full multi-tab workspace
+- [Export & Reports](/workflows/export-reports) — export data from any tab independently

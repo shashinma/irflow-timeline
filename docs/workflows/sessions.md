@@ -88,3 +88,10 @@ Session files can be shared with other analysts, provided they have access to th
 ::: tip Multiple Sessions
 Create separate session files for different investigation tracks. For example, save one session focused on lateral movement and another on data exfiltration.
 :::
+
+## See Also
+
+- [Multi-Tab Analysis](/workflows/multi-tab) — sessions preserve the full multi-tab layout
+- [Bookmarks & Tags](/features/bookmarks-tags) — all annotations are saved and restored with the session
+- [Color Rules](/features/color-rules) — custom color rules persist across session save/restore
+- [Export & Reports](/workflows/export-reports) — save your session before exporting for documentation

@@ -77,3 +77,9 @@ Color rules are pre-compiled into optimized matching functions when created or m
 - **Delete** — remove rules you no longer need
 - **Enable/Disable** — toggle rules without deleting them
 - **Import/Export** — rules are saved and restored with [sessions](/workflows/sessions)
+
+## See Also
+
+- [Bookmarks & Tags](/features/bookmarks-tags) — complementary annotation system for categorizing rows
+- [KAPE Integration](/workflows/kape-integration) — auto-applies color rule presets for recognized KAPE output
+- [Virtual Grid](/features/virtual-grid) — the grid where color rules are rendered

@@ -230,3 +230,10 @@ For datasets with thousands of processes, use the depth limit control to start w
 ::: tip Combine with Persistence Analyzer
 After identifying a suspicious persistence mechanism, use the Process Inspector to trace what process installed it and what the persisted binary spawns on execution.
 :::
+
+## See Also
+
+- [Persistence Analyzer](/features/persistence-analyzer) — detect persistence mechanisms installed by suspicious processes
+- [Lateral Movement Tracker](/features/lateral-movement) — trace execution chains that follow lateral movement hops
+- [IOC Matching](/features/ioc-matching) — match process names, hashes, and paths against threat intel
+- [Search & Filtering](/features/search-filtering) — find specific processes across the full timeline

@@ -98,3 +98,10 @@ Hovering over any bar displays a tooltip showing the exact date/hour and event c
 ## X-Axis Label Spacing
 
 Labels are automatically spaced to avoid overlap — approximately every 70px for day view and 90px for hour view. The first and last buckets always show labels. Day labels use `MM/DD` format, hour labels use `MM/DD HH:00`.
+
+## See Also
+
+- [Gap & Burst Analysis](/features/gap-burst-analysis) — detect anomalous activity spikes and timeline gaps
+- [Log Source Coverage](/features/log-source-coverage) — Gantt-style view of which sources cover which time ranges
+- [Merging Timelines](/workflows/merge-tabs) — multi-source histogram coloring after merging tabs
+- [Search & Filtering](/features/search-filtering) — histogram reflects active filters in real time

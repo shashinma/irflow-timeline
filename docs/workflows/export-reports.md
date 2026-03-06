@@ -124,3 +124,10 @@ A typical investigation export workflow:
 4. **Generate Report** — create the HTML summary
 5. **Export Data** — export filtered CSV/XLSX for further analysis or archival
 6. **Share** — send the report to your team or include in your case file
+
+## See Also
+
+- [Bookmarks & Tags](/features/bookmarks-tags) — tagged rows appear grouped in HTML reports
+- [Sessions](/workflows/sessions) — save investigation state before exporting
+- [Multi-Tab Analysis](/workflows/multi-tab) — export from individual tabs or merged timelines
+- [Merging Timelines](/workflows/merge-tabs) — create a unified timeline before final export

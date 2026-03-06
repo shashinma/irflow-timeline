@@ -290,3 +290,10 @@ After identifying a suspicious persistence mechanism, use the [Process Inspector
 ::: tip Correlate with Lateral Movement
 Persistence is often installed after lateral movement. Cross-reference persistence timestamps with the [Lateral Movement Tracker](/features/lateral-movement) to identify which hop preceded each persistence installation.
 :::
+
+## See Also
+
+- [Process Inspector](/features/process-tree) — trace what process installed each persistence mechanism
+- [Lateral Movement Tracker](/features/lateral-movement) — correlate persistence with lateral movement hops
+- [IOC Matching](/features/ioc-matching) — match persisted executables and registry paths against threat intel
+- [Gap & Burst Analysis](/features/gap-burst-analysis) — identify when persistence was installed relative to other activity

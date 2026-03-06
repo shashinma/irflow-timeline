@@ -177,3 +177,9 @@ Apply filters before running burst analysis. For example, filter to authenticati
 ::: tip Cross-Reference
 After identifying a burst, click to zoom into that time range and examine the individual events. Look for repeated patterns — same source, same target, same event type.
 :::
+
+## See Also
+
+- [Histogram](/features/histogram) — visualize the same temporal distribution with brush-to-filter
+- [Log Source Coverage](/features/log-source-coverage) — gaps in coverage may explain gaps in your timeline
+- [Lateral Movement Tracker](/features/lateral-movement) — authentication bursts often indicate brute force or spray attacks

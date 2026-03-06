@@ -84,3 +84,9 @@ Stacking respects all active filters — column filters, checkbox filters, date 
 | **Target Path** | Unusual file access patterns |
 | **LogonType** | Distribution of authentication methods |
 | **CommandLine** | Repeated or suspicious commands |
+
+## See Also
+
+- [Search & Filtering](/features/search-filtering) — click a stacked value to filter the grid to matching rows
+- [Histogram](/features/histogram) — combine stacking with temporal analysis to spot patterns
+- [Virtual Grid](/features/virtual-grid) — the grid interface where stacking results are applied

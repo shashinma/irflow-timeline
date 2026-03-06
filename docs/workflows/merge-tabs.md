@@ -81,3 +81,10 @@ Rather than merging everything, merge only the sources relevant to your current 
 ::: warning Performance
 Merging very large tabs (millions of rows each) creates a proportionally large merged database. Consider filtering each tab before merging to reduce the combined size.
 :::
+
+## See Also
+
+- [Multi-Tab Analysis](/workflows/multi-tab) — open and manage tabs before merging
+- [Histogram](/features/histogram) — merged timelines show multi-source coloring in the histogram
+- [Lateral Movement Tracker](/features/lateral-movement) — trace lateral movement across merged host timelines
+- [IOC Matching](/features/ioc-matching) — scan for indicators across all merged sources at once
