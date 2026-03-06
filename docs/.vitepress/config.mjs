@@ -46,6 +46,7 @@ export default defineConfig({
       }
     })]
   ],
+  outline: { level: 'deep' },
   themeConfig: {
     logo: '/logo.svg',
     nav: [
@@ -170,6 +171,12 @@ export default defineConfig({
     editLink: {
       pattern: 'https://github.com/r3nzsec/irflow-timeline/edit/main/docs/:path',
       text: 'Edit this page on GitHub'
+    },
+    externalLinkIcon: true,
+    returnToTopLabel: 'Back to top',
+    docFooter: {
+      prev: 'Previous',
+      next: 'Next'
     }
   }
 })
