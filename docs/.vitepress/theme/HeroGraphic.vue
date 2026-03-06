@@ -1,5 +1,10 @@
 <template>
-  <div class="hero-graphic" ref="container">
+  <div class="hero-graphic"
+    :class="{ 'tour-active': tourActive && tourStep >= 0 }"
+    ref="container"
+    @mouseenter="pauseTour"
+    @mouseleave="resumeTour"
+  >
     <!-- Scan line effect -->
     <div class="scan-line" :style="{ background: `linear-gradient(180deg, transparent ${scanLine - 1}%, #E8613A08 ${scanLine}%, transparent ${scanLine + 1}%)` }" />
 
@@ -20,7 +25,7 @@
     </div>
 
     <!-- Stats bar -->
-    <div class="stats-bar">
+    <div class="stats-bar" :class="{ 'tour-focus': tourStep === 0 }">
       <div v-for="(stat, i) in stats" :key="i" class="stat-item" :class="{ 'stat-last': i === stats.length - 1 }">
         <span class="stat-label">{{ stat.label }}</span>
         <span class="stat-value" :style="{ color: stat.color }">{{ stat.display }}</span>
@@ -28,7 +33,7 @@
     </div>
 
     <!-- Filter tags -->
-    <div class="filter-tags">
+    <div class="filter-tags" :class="{ 'tour-focus': tourStep === 1 }">
       <span v-for="(tag, i) in filterTags" :key="i" class="filter-tag" :style="{
         color: tag.color,
         background: `${tag.color}15`,
@@ -37,7 +42,7 @@
     </div>
 
     <!-- Histogram -->
-    <div class="histogram-section">
+    <div class="histogram-section" :class="{ 'tour-focus': tourStep === 0 }">
       <div class="histogram-bars">
         <div v-for="(v, i) in histogramData" :key="i" class="hist-bar-wrapper">
           <div class="hist-bar" :style="{
@@ -59,7 +64,7 @@
     <!-- Main content -->
     <div class="main-content">
       <!-- Timeline table -->
-      <div class="timeline-table">
+      <div class="timeline-table" :class="{ 'tour-focus': tourStep === 0 || tourStep === 1 }">
         <div class="table-header">
           <span v-for="h in ['TIMESTAMP', 'SOURCE', 'ID', 'DETAIL']" :key="h" class="header-cell">{{ h }}</span>
         </div>
@@ -85,7 +90,7 @@
       <!-- Right side panels -->
       <div class="side-panels">
         <!-- Process Inspector -->
-        <div class="panel process-tree" :style="{ opacity: showTree ? 1 : 0, transform: showTree ? 'translateY(0)' : 'translateY(10px)' }">
+        <div class="panel process-tree" :class="{ 'tour-focus': tourStep === 2 }" :style="{ opacity: sectionOpacity(2, showTree), transform: showTree ? 'translateY(0)' : 'translateY(10px)' }">
           <div class="panel-header">
             <span class="panel-title">PROCESS INSPECTOR</span>
             <span class="panel-badge badge-orange">SYSMON EID 1</span>
@@ -102,7 +107,7 @@
         </div>
 
         <!-- Lateral Movement -->
-        <div class="panel lateral-panel" :style="{ opacity: showNetwork ? 1 : 0, transform: showNetwork ? 'translateY(0)' : 'translateY(10px)' }">
+        <div class="panel lateral-panel" :class="{ 'tour-focus': tourStep === 3 }" :style="{ opacity: sectionOpacity(3, showNetwork), transform: showNetwork ? 'translateY(0)' : 'translateY(10px)' }">
           <div class="panel-header">
             <span class="panel-title">LATERAL MOVEMENT</span>
             <span class="panel-badge badge-red">3 HOPS</span>
@@ -162,17 +167,98 @@
         <span class="status-item">CSV • EVTX • XLSX • Plaso</span>
       </div>
     </div>
+
+    <!-- Tour caption -->
+    <Transition name="tour-caption">
+      <div v-if="tourActive && tourStep >= 0" :key="tourStep" class="tour-caption">
+        <span class="tour-caption-icon">{{ tourSteps[tourStep].icon }}</span>
+        <span class="tour-caption-text">{{ tourSteps[tourStep].caption }}</span>
+      </div>
+    </Transition>
+
+    <!-- Tour step indicator dots -->
+    <div v-if="tourActive" class="tour-dots">
+      <button v-for="step in visibleTourSteps" :key="step.index"
+        class="tour-dot" :class="{ 'tour-dot-active': tourStep === step.index }"
+        @click="goToStep(step.index)">
+        <span class="tour-dot-label">{{ step.shortLabel }}</span>
+        <span class="tour-dot-pip" />
+        <span v-if="tourStep === step.index" class="tour-dot-progress"
+          :style="{ animationDuration: `${TOUR_INTERVAL}ms` }" />
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const scanLine = ref(0)
 const visibleRows = ref(0)
 const histogramAnim = ref(false)
 const showTree = ref(false)
 const showNetwork = ref(false)
+
+// Tour state
+const tourActive = ref(false)
+const tourStep = ref(-1)
+const tourPaused = ref(false)
+const isMobile = ref(false)
+const TOUR_INTERVAL = 5000
+const TOUR_START_DELAY = 2400
+
+const tourSteps = [
+  { index: 0, shortLabel: 'Import', icon: '\u26A1', caption: 'Stream 30GB+ forensic timelines without loading into memory' },
+  { index: 1, shortLabel: 'Search', icon: '\uD83D\uDD0D', caption: '5 search modes: text, regex, fuzzy, FTS, mixed' },
+  { index: 2, shortLabel: 'Processes', icon: '\uD83C\uDF33', caption: 'Reconstruct attack chains with MITRE ATT&CK mapping', desktopOnly: true },
+  { index: 3, shortLabel: 'Network', icon: '\uD83D\uDD17', caption: 'Track multi-hop lateral movement across your network', desktopOnly: true },
+]
+
+const visibleTourSteps = computed(() => {
+  if (isMobile.value) {
+    return tourSteps.filter(s => !s.desktopOnly)
+  }
+  return tourSteps
+})
+
+function sectionOpacity(stepN, baseVisible) {
+  if (!baseVisible) return 0
+  if (!tourActive.value || tourStep.value < 0) return 1
+  return tourStep.value === stepN ? 1 : 0.2
+}
+
+let tourIv = null
+
+function advanceTour() {
+  const visible = visibleTourSteps.value
+  const currentIdx = visible.findIndex(s => s.index === tourStep.value)
+  const nextIdx = (currentIdx + 1) % visible.length
+  tourStep.value = visible[nextIdx].index
+}
+
+function startTourCycle() {
+  if (tourIv) clearInterval(tourIv)
+  tourIv = setInterval(() => {
+    if (!tourPaused.value) advanceTour()
+  }, TOUR_INTERVAL)
+}
+
+function goToStep(n) {
+  tourStep.value = n
+  startTourCycle()
+}
+
+function pauseTour() {
+  tourPaused.value = true
+}
+
+function resumeTour() {
+  tourPaused.value = false
+}
+
+function checkMobile() {
+  isMobile.value = window.innerWidth <= 960
+}
 
 const stats = [
   { label: 'EVENTS', display: '847,293', color: '#F5F5F5' },
@@ -269,12 +355,19 @@ let scanIv = null
 let timers = []
 
 onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+
   if (prefersReducedMotion) {
     // Show everything immediately without animation
     histogramAnim.value = true
     showTree.value = true
     showNetwork.value = true
     visibleRows.value = timelineEvents.length
+    // Still start tour (cycles content without transitions)
+    tourActive.value = true
+    tourStep.value = 0
+    startTourCycle()
     return
   }
 
@@ -291,11 +384,20 @@ onMounted(() => {
     scanPos = (scanPos + 0.3) % 100
     scanLine.value = scanPos
   }, 30)
+
+  // Start tour after entrance animation completes
+  timers.push(setTimeout(() => {
+    tourActive.value = true
+    tourStep.value = 0
+    startTourCycle()
+  }, TOUR_START_DELAY))
 })
 
 onUnmounted(() => {
   timers.forEach(clearTimeout)
   if (scanIv) clearInterval(scanIv)
+  if (tourIv) clearInterval(tourIv)
+  window.removeEventListener('resize', checkMobile)
 })
 </script>
 
@@ -562,6 +664,126 @@ onUnmounted(() => {
 .status-green { color: #28C840; margin-right: 4px !important; }
 .status-accent { font-size: 9px; color: #E8613A; line-height: 1; white-space: nowrap; }
 
+/* ===== Tour: Section Dimming ===== */
+.hero-graphic.tour-active .stats-bar,
+.hero-graphic.tour-active .histogram-section,
+.hero-graphic.tour-active .filter-tags,
+.hero-graphic.tour-active .timeline-table {
+  opacity: 0.2;
+  transition: opacity 0.5s ease;
+}
+.hero-graphic.tour-active .tour-focus {
+  opacity: 1 !important;
+  box-shadow: inset 0 0 0 1px rgba(232, 97, 58, 0.25);
+}
+.hero-graphic.tour-active .title-bar { opacity: 0.6; transition: opacity 0.5s ease; }
+.hero-graphic.tour-active .status-bar { opacity: 0.4; transition: opacity 0.5s ease; }
+
+/* ===== Tour: Caption ===== */
+.tour-caption {
+  position: absolute;
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(13, 13, 13, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(232, 97, 58, 0.3);
+  border-radius: 8px;
+  padding: 10px 18px !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 25;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.tour-caption-icon {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.tour-caption-text {
+  font-size: 11px;
+  color: #CCC;
+  line-height: 1.3;
+}
+
+/* Caption transition */
+.tour-caption-enter-active {
+  transition: opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.tour-caption-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.tour-caption-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(8px);
+}
+.tour-caption-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-6px);
+}
+
+/* ===== Tour: Step Dots ===== */
+.tour-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 20px;
+  z-index: 25;
+}
+.tour-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 2px !important;
+  position: relative;
+  font-family: inherit;
+}
+.tour-dot-label {
+  font-size: 8px;
+  color: #555;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+.tour-dot-active .tour-dot-label {
+  color: #E8613A;
+}
+.tour-dot-pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #555;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+.tour-dot-active .tour-dot-pip {
+  background: #E8613A;
+  box-shadow: 0 0 8px rgba(232, 97, 58, 0.5);
+}
+.tour-dot-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: #E8613A;
+  border-radius: 1px;
+  width: 0%;
+  animation: tour-fill linear forwards;
+}
+@keyframes tour-fill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
 /* Responsive - hide on small screens */
 @media (max-width: 960px) {
   .side-panels { display: none; }
@@ -572,6 +794,7 @@ onUnmounted(() => {
   }
   .filter-tags { display: none; }
   .hero-graphic { border-radius: 8px; }
+  .tour-caption { white-space: normal; max-width: 90%; }
 }
 
 @media (max-width: 640px) {
@@ -582,6 +805,9 @@ onUnmounted(() => {
     grid-template-columns: 70px 1fr;
   }
   .cell-source, .cell-id { display: none; }
+  .tour-dot-label { display: none; }
+  .tour-caption { font-size: 10px; padding: 8px 14px !important; }
+  .tour-caption-text { font-size: 10px; }
 }
 
 /* Accessibility: disable animations for users who prefer reduced motion */
@@ -592,5 +818,27 @@ onUnmounted(() => {
   .panel { transition: none !important; }
   .tree-node { transition: none !important; }
   .hist-alert-dot { box-shadow: none; }
+  /* Tour: disable animated transitions but keep content cycling */
+  .hero-graphic.tour-active .stats-bar,
+  .hero-graphic.tour-active .histogram-section,
+  .hero-graphic.tour-active .filter-tags,
+  .hero-graphic.tour-active .timeline-table,
+  .hero-graphic.tour-active .tour-focus,
+  .hero-graphic.tour-active .title-bar,
+  .hero-graphic.tour-active .status-bar {
+    transition: none !important;
+  }
+  .tour-caption-enter-active,
+  .tour-caption-leave-active {
+    transition: none !important;
+  }
+  .tour-dot-pip,
+  .tour-dot-label {
+    transition: none !important;
+  }
+  .tour-dot-progress {
+    animation: none;
+    width: 100%;
+  }
 }
 </style>
