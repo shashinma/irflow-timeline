@@ -784,6 +784,31 @@ onUnmounted(() => {
   to { width: 100%; }
 }
 
+/* ===== Light mode adjustments ===== */
+/* Give the dark app mockup a subtle lift off light backgrounds */
+:root:not(.dark) .hero-graphic {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15), 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+/* Tour caption: keep dark glass style but boost contrast on light pages */
+:root:not(.dark) .tour-caption {
+  background: rgba(13, 13, 13, 0.95);
+  border-color: rgba(232, 97, 58, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+/* Tour dots: darken inactive pips so they're visible on light pages */
+:root:not(.dark) .tour-dot-label {
+  color: #999;
+}
+:root:not(.dark) .tour-dot-pip {
+  background: #999;
+}
+:root:not(.dark) .tour-dot-active .tour-dot-label {
+  color: #E8613A;
+}
+:root:not(.dark) .tour-dot-active .tour-dot-pip {
+  background: #E8613A;
+}
+
 /* Responsive - hide on small screens */
 @media (max-width: 960px) {
   .side-panels { display: none; }

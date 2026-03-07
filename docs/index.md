@@ -17,25 +17,25 @@ hero:
 features:
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
     title: Blazing Fast
-    details: Phase-tuned SQLite engine with 1GB import cache, adaptive 100K-row batches, and background async indexing. Sub-100ms filtered queries on 10M+ rows. Handles 30GB+ files without breaking a sweat.
+    details: SQLite engine with sub-100ms queries on 10M+ rows. Streams 30GB+ files with background indexing — no loading into memory.
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>'
     title: 5 Search Modes
-    details: Mixed, FTS, LIKE, Fuzzy, and Regex modes. Find exactly what you need across massive timelines with full-text search, substring matching, typo-tolerant fuzzy search, and pattern matching.
+    details: Mixed, FTS, LIKE, Fuzzy, and Regex. Full-text search, substring matching, typo-tolerant fuzzy, and pattern matching across millions of rows.
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6"/><circle cx="12" cy="12" r="3"/><path d="M12 15v3"/><path d="M8 15l-3 3"/><path d="M16 15l3 3"/><path d="M5 18v2"/><path d="M12 18v2"/><path d="M19 18v2"/></svg>'
     title: Process Inspector
-    details: GUID-preferred process hierarchy from Sysmon (EventID 1) and Windows Security (4688) logs with 4-tier threat scoring — critical for direct malware indicators, high for likely malicious activity, medium for suspicious patterns needing context, low for informational.
+    details: Reconstruct process trees from Sysmon and Security logs with 4-tier threat scoring and 342 detection rules mapped to MITRE ATT&CK.
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><line x1="8.5" y1="7.5" x2="15.5" y2="16.5"/><line x1="15.5" y1="7.5" x2="8.5" y2="16.5"/><line x1="6" y1="9" x2="6" y2="15"/><line x1="18" y1="9" x2="18" y2="15"/></svg>'
     title: Lateral Movement Tracker
-    details: Interactive network graph with multi-hop chain reconstruction, RDP session correlation, and automated attack pattern detection — brute force, password spray, credential compromise, Impacket tool detection (5 variants), and RMM tool scanning (30 tools). MITRE ATT&CK mapped findings with one-click filtering.
+    details: Network graph with multi-hop chain reconstruction and RDP session correlation. Detects brute force, password spray, Impacket, and 30 RMM tools.
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(232,93,42,0.15)"/><path d="M9 12l2 2 4-4"/></svg>'
     title: Persistence Analyzer
-    details: Automated detection of 30+ persistence techniques with risk scoring. Scans EVTX logs and registry exports for services, scheduled tasks, WMI subscriptions, autorun keys, and more.
+    details: Automated detection of 30+ persistence techniques with risk scoring across services, scheduled tasks, WMI subscriptions, and autorun keys.
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="8" rx="0.5" fill="rgba(232,93,42,0.3)"/><rect x="12" y="6" width="3" height="12" rx="0.5" fill="rgba(232,93,42,0.3)"/><rect x="17" y="13" width="3" height="5" rx="0.5" fill="rgba(232,93,42,0.3)"/></svg>'
     title: Rich Analytics
-    details: Heatmap histogram with brush-to-filter, session and gap detection with auto-tagging, median-baseline burst anomaly detection with sparkline charts, Gantt-style log source coverage maps, and value frequency stacking.
+    details: Histogram with brush-to-filter, gap and burst detection, log source coverage maps, and value frequency stacking.
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
     title: IOC Matching
-    details: Scan timelines against threat intel IOC lists with 17+ indicator types (hashes, IPs, domains, registry keys, named pipes, mutexes). Auto-defanging, per-IOC tagging, and inline grid highlighting.
+    details: Scan against threat intel lists with 17+ indicator types — hashes, IPs, domains, registry keys, named pipes, and more. Auto-defangs and tags matches inline.
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="rgba(232,93,42,0.3)"/></svg>'
     title: Investigation Workflow
     details: Bookmarks, color-coded tags, conditional formatting with KAPE-aware presets, and full session save/restore.
