@@ -5,7 +5,7 @@ description: High-performance DFIR timeline analysis tool for macOS — search, 
 hero:
   name: IRFlow Timeline
   text: DFIR Timeline Analysis
-  tagline: High-performance forensic timeline viewer for macOS. Handles large files for timeline analysis. CSV/TSV/XLSX/EVTX/Plaso
+  tagline: Native macOS forensic timeline analysis. Import, search, and investigate EVTX, CSV, XLSX, and Plaso timelines with the analytics DFIR professionals actually need.
   actions:
     - theme: brand
       text: Get Started
