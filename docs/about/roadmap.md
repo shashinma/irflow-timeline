@@ -14,11 +14,6 @@ This page outlines the planned direction for IRFlow Timeline. Priorities may shi
 - Expand the detection rules library beyond the current ones
 - Community-contributed rule packs with shared rule repositories
 
-### MFT & $J File Support
-- Native `.mft` `.$J` file parsing without requiring pre-processing through MFTECmd
-- Direct ingestion of raw $MFT $J files from forensic images
-- Ransomware analytics based on $MFT data
-
 ---
 
 ## Planned
@@ -62,16 +57,16 @@ This page outlines the planned direction for IRFlow Timeline. Priorities may shi
 - Zeek/Bro log ingestion for network-level correlation
 - Merge network and host timelines for full-stack visibility
 
-### Auto-Update
-- In-app update notifications and one-click updates
-- Delta updates to minimize download size
-
 ---
 
 ## Recently Completed
 
 See the [Changelog](/about/changelog) for detailed release notes on everything shipped so far. Highlights from recent releases:
 
+- **Auto-Update** — In-app update notifications with download progress, one-click install, and automatic startup checks
+- **NTFS Analysis Tools** — Raw `$MFT` and `$J` (USN Journal) import with six analysis tools: Ransomware Analysis (with PDF export), Timestomping Detection, File Activity Heatmap, ADS Analyzer, USN Journal Analysis (11 categories), and Resident Data Extraction
+- **VirusTotal Integration** — API key configuration, single and bulk IOC lookups, persistent SQLite cache with configurable TTL, rate limiting, color-coded verdict badges, and auto-tagging
+- **Analyst Profiles** — Suppressions and baselines for Process Inspector false-positive management with save/load persistence
 - **v1.0.3-beta** — Lateral Movement attack pattern detection, RDP session grouping, menu bar redesign, row checkbox selection, Find Duplicates, Persistence Analyzer custom rules
 - **v1.0.2-beta** — 342 detection rules library, import queue system, IOC matching expansion (17+ types), Process Tree overhaul, Lateral Movement expansion with RDP correlation
 - **v1.0.0-beta** — Persistence Analyzer (30+ techniques), lateral movement outlier detection, background indexing pipeline, phase-tuned SQLite performance

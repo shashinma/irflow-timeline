@@ -12,33 +12,54 @@ description: Keyboard shortcuts reference for IRFlow Timeline — file operation
 | `Cmd+E` | Export filtered data |
 | `Cmd+S` | Save session |
 | `Cmd+Shift+O` | Load session |
+| `Cmd+Shift+R` | Generate report |
 
 ## Navigation
 
 | Shortcut | Action |
 |----------|--------|
 | `Cmd+W` | Close active tab |
+| `Cmd+Shift+Q` | Close all tabs |
 | `Cmd+1-9` | Switch to tab 1-9 |
 | `Cmd+Tab` | Next tab |
 | `Cmd+Shift+Tab` | Previous tab |
+| `Up / Down` | Navigate rows |
 
 ## Search & Filter
 
 | Shortcut | Action |
 |----------|--------|
 | `Cmd+F` | Focus search bar |
-| `Cmd+Shift+F` | Cross-tab search |
+| `Cmd+Shift+F` | Cross-tab search (Cross Find) |
+| `F3` / `Cmd+Right` | Next search match |
+| `Shift+F3` / `Cmd+Left` | Previous search match |
 | `Cmd+B` | Toggle bookmarked rows only |
-| `Escape` | Clear search / close modal |
+| `Escape` | Clear search / close modal / close panel |
 
 ## Grid
 
 | Shortcut | Action |
 |----------|--------|
-| `Cmd+R` | Reset column layout |
+| `Cmd+Shift+C` | Column Manager |
+| `Cmd+Shift+L` | Conditional Formatting |
+| `Cmd+R` | Reset column widths |
+| `Cmd+Plus` / `Cmd+Minus` | Increase / decrease font size |
 | `Click` | Select row |
 | `Shift+Click` | Range select rows |
-| `Cmd+Click` | Context menu |
+| `Cmd+Click` / `Ctrl+Click` | Context menu |
+| `Shift+F10` | Context menu (keyboard) |
+| `Double-click` | Cell detail popup |
+| `Double-click border` | Auto-fit column width |
+| `Drag header` | Group by column |
+
+## Selection
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+C` | Copy selected rows |
+| Select All | Select all rows (Actions menu) |
+| Deselect All | Clear selection (Actions menu) |
+| Invert Selection | Toggle selection state (Actions menu) |
 
 ## Tools
 
@@ -55,6 +76,17 @@ description: Keyboard shortcuts reference for IRFlow Timeline — file operation
 | `Cmd+M` | Minimize window |
 | `Cmd+Shift+F` | Toggle fullscreen |
 
+## Search Syntax
+
+| Pattern | Meaning |
+|---------|---------|
+| `word1 word2` | OR (matches either) |
+| `+word` | AND (must include) |
+| `-word` | EXCLUDE |
+| `"exact phrase"` | Phrase match |
+| `Column:value` | Column-specific filter |
+| `FL` / `HL` | Toggle filter / highlight mode |
+
 ## Context Menu Shortcuts
 
 `Cmd+Click` any cell or column header to access additional actions:
@@ -66,3 +98,4 @@ description: Keyboard shortcuts reference for IRFlow Timeline — file operation
 - Filter / Exclude value
 - Auto-fit column width
 - Create color rule
+- Lookup on VirusTotal

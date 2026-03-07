@@ -105,6 +105,26 @@ The Process Inspector uses a library of 342 parent-child chain rules mapped to M
 
 The detection rules cover 12 ATT&CK tactic categories: Execution, Defense Evasion/LOLBins, C2/RATs, Persistence, Discovery/Recon, Credential Access, Lateral Movement, Impact/Ransomware, Collection/Staging, Exfiltration, Initial Access (web shells), and Browser Exploits. A safe process exclusion list (`SAFE_PROCS`) prevents false positives on legitimate Windows processes that run from temp/AppData paths.
 
+### Standalone Detection Patterns
+
+In addition to chain rules, 13 standalone regex patterns detect suspicious behavior regardless of the parent-child relationship:
+
+| Pattern | What It Detects |
+|---------|-----------------|
+| `SUS_PATHS` | Execution from suspicious paths (`\Temp\`, `\AppData\`, `\Downloads\`, `\ProgramData\`) |
+| `ENCODED_PS` | Encoded PowerShell execution (`-enc`, `-encodedcommand`) |
+| `CRED_DUMP_CMD` | Credential dumping commands (`comsvcs.dll`, `sekurlsa`, `mimikatz`) |
+| `NTDS_EXTRACT` | NTDS.dit extraction (`ntdsutil ifm`, `secretsdump`) |
+| `LSASS_TOOLS` | Tools that access LSASS memory (`procdump`, `processhacker`, `handlekatz`) |
+| `ACCOUNT_MANIP` | Account manipulation (`net user /add`, `net localgroup /add`) |
+| `DEFENSE_EVASION` | Defense evasion behaviors (`vssadmin delete`, `wevtutil cl`) |
+| `NETWORK_SCANNERS` | Network scanning tools (`netscan`, `masscan`, `nbtscan`) |
+| `AD_RECON_TOOLS` | AD reconnaissance (`adfind`, `sharphound`, `bloodhound`) |
+| `RMM_TOOLS` | Remote management tools (`anydesk`, `splashtop`, `rustdesk`) |
+| `EXFIL_TOOLS` | Exfiltration tools (`rclone`, `filezilla`, `winscp`) |
+| `ARCHIVE_SUSPECT` | Suspicious archive commands (`7z a -p`, password-protected archives) |
+| `SAFE_PROCS` | Known-safe process exclusion list (false-positive suppression) |
+
 ### Critical (Red)
 
 | Detection | Reason | Example |
@@ -217,6 +237,59 @@ The header displays contextual information about the loaded data:
 - GUID-linked badge (green) when GUID linking is active
 - Truncated warning (red) when the max process limit was reached
 
+## View Modes
+
+The Process Inspector offers multiple view modes for different analysis workflows.
+
+### Tree View Modes
+
+| Mode | Filter | Clustering | Use Case |
+|------|--------|-----------|----------|
+| **Story** | Suspicious only | Clustered | Incident narrative — shows only flagged processes grouped by execution chain |
+| **Triage** | Suspicious only | Clustered | Quick review of suspicious activity with deduplication |
+| **Hunt** | Medium+ severity | Clustered | Broader sweep including medium-severity detections |
+| **Raw** | All processes | Flat | Full unfiltered process list for manual analysis |
+
+### Detection Table Modes
+
+The detection results table has its own view modes:
+
+| Mode | Filter | Description |
+|------|--------|-------------|
+| **Triage** | Suspicious only | Deduped, risk-sorted — highest-risk items first |
+| **Review** | Medium+ severity | Broader view with deduplication |
+| **Raw** | All items | Flat rows, no collapsing |
+
+## Analyst Profile
+
+The Analyst Profile lets you suppress known false positives and define environment baselines so the Process Inspector surfaces only actionable findings.
+
+### Suppressions
+
+Add suppression rules to hide known-good detections. Each suppression can match on:
+
+- **Process name** — the detected process (e.g., `svchost.exe`)
+- **Parent process name** — the parent in the chain
+- **Hostname** — specific machine
+- **User** — account context
+- **Image path** — full executable path
+- **Command line contains** — substring match on command line
+- **Reason** — free-text justification for the suppression
+
+### Baselines
+
+Define baseline behaviors that are normal for your environment. Baseline rules use the same matching fields as suppressions.
+
+### Persistence
+
+- **Save** — export your analyst profile to a JSON file via **Save Profile**
+- **Load** — import a previously saved profile via **Load Profile**
+- Profiles persist across sessions and can be shared between analysts
+
+## Custom Rules
+
+Beyond the built-in detection library, you can extend detection coverage by defining custom detection rules within the Persistence Analyzer. Custom rules support regex patterns, severity levels, and MITRE ATT&CK technique mapping.
+
 ## Tips
 
 ::: tip Sysmon Configuration
@@ -236,4 +309,5 @@ After identifying a suspicious persistence mechanism, use the Process Inspector 
 - [Persistence Analyzer](/features/persistence-analyzer) — detect persistence mechanisms installed by suspicious processes
 - [Lateral Movement Tracker](/features/lateral-movement) — trace execution chains that follow lateral movement hops
 - [IOC Matching](/features/ioc-matching) — match process names, hashes, and paths against threat intel
+- [NTFS Analysis](/features/ntfs-analysis) — correlate process execution with MFT and USN Journal activity
 - [Search & Filtering](/features/search-filtering) — find specific processes across the full timeline

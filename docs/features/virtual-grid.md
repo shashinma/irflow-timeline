@@ -20,7 +20,7 @@ The menu bar provides access to all application features through five dropdown m
 | **Export** | `⌘E` | Export filtered data as CSV, TSV, XLSX, or XLS |
 | **Save Session** | `⌘S` | Save all tabs, filters, bookmarks, tags, and color rules to a `.tle` file |
 | **Load Session** | `⇧⌘O` | Restore a previously saved session |
-| **Open Recent** | | Submenu showing the last 10 opened files with full paths |
+| **Open Recent** | | Submenu showing the last 10 opened files with full paths; includes Clear Recent Files |
 | **Close Tab** | `⌘W` | Close the active tab |
 | **Close All Tabs** | | Close every open tab |
 | **Exit** | | Quit the application |
@@ -62,6 +62,7 @@ The menu bar provides access to all application features through five dropdown m
 | **Process Inspector** | Parent-child process hierarchy with MITRE ATT&CK detection |
 | **Lateral Movement Tracker** | Network graph of host-to-host logon activity with attack pattern detection |
 | **Persistence Analyzer** | Automated detection of 30+ persistence techniques with risk scoring |
+| **NTFS Analysis** | Ransomware analysis, timestomping detection, ADS analyzer, USN Journal analysis, file activity heatmap, resident data extraction (available when MFT/$J data is loaded) |
 | **Generate Report** | Create an HTML investigation report from bookmarks and tags |
 
 ### Help
@@ -70,6 +71,7 @@ The menu bar provides access to all application features through five dropdown m
 |------|----------|-------------|
 | **Quick Help** | | In-app guide covering supported formats, search modes, and shortcuts |
 | **Keyboard Shortcuts** | `⌘/` | Reference card of all keyboard shortcuts |
+| **Check for Updates** | | Check for new versions and install updates |
 | **Website** | | Open the IRFlow Timeline documentation site |
 | **About IRFlow Timeline** | | Version info, author, and social links |
 
@@ -285,3 +287,4 @@ The Tags column is a full first-class grid column displaying color-coded tag pil
 - [Color Rules](/features/color-rules) — conditional formatting with KAPE-aware presets
 - [Histogram](/features/histogram) — temporal event distribution with brush-to-filter
 - [Stacking](/features/stacking) — frequency analysis on any column
+- [NTFS Analysis](/features/ntfs-analysis) — specialized analysis tools for MFT and USN Journal data

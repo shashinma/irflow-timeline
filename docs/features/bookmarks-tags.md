@@ -61,16 +61,40 @@ IRFlow Timeline includes common DFIR investigation tags:
 
 You can also create custom tags — just type any name. IOC Matching automatically creates per-indicator tags (e.g., `IOC: cmd.exe`, `IOC: 185.220.101.34`) with orange coloring.
 
-### Bulk Tagging
+### Bulk Actions
+
+Open **Actions > Bulk Tag / Bookmark** for bulk operations on filtered rows:
+
+**Bulk Tagging:**
+
+1. Enter a tag name (with autocomplete from existing tags)
+2. Pick a tag color
+3. Click **Apply Tag** to tag all rows matching the current filter
+4. Shows "Applies to N filtered rows" count and confirmation ("Tagged N rows as X")
+
+**Bulk Bookmarking:**
+
+1. Click **Bookmark All** to bookmark all filtered rows, or **Remove Bookmarks** to clear bookmarks from filtered rows
+2. Shows result count confirmation
 
 **By Time Range:**
 
-1. Open **Actions > Bulk Tag / Bookmark**
-2. Select a start and end timestamp
-3. Choose or type a tag name
-4. All rows in the time range receive the tag
+Tags can also be applied by time range from other tools:
+- **Histogram sessions** — tag all rows in a detected session window
+- **Burst detection** — tag rows in identified burst periods
+- **Heatmap windows** — tag rows from file activity heatmap time ranges
 
 This is useful for marking an entire activity window (e.g., "Attacker Active 14:30-15:45").
+
+**Auto-Tags from Analysis Tools:**
+
+Several analysis tools automatically create bulk tags:
+- `Timestomp Indicator` — from timestomping detection
+- `Downloaded` — from ADS Zone.Identifier analysis
+- `Encrypted`, `Ransom Note`, `Payload` — from ransomware analysis
+- `Modified Burst`, `Created Burst` — from burst detection
+- `IOC: {value}` — from IOC matching
+- `malicious`, `suspicious`, `clean` — from VirusTotal enrichment
 
 ### Removing Tags
 
@@ -112,5 +136,6 @@ HTML reports include:
 
 - [Color Rules](/features/color-rules) — conditional formatting to visually highlight patterns
 - [IOC Matching](/features/ioc-matching) — auto-creates per-IOC tags on matched rows
+- [NTFS Analysis](/features/ntfs-analysis) — auto-tags timestomped files, ADS entries, and ransomware indicators
 - [Export & Reports](/workflows/export-reports) — tagged rows appear grouped in HTML reports
 - [Sessions](/workflows/sessions) — bookmarks and tags persist across session save/restore

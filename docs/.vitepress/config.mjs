@@ -99,6 +99,7 @@ export default defineConfig({
             { text: 'Persistence Analyzer', link: '/features/persistence-analyzer' },
             { text: 'Gap & Burst Analysis', link: '/features/gap-burst-analysis' },
             { text: 'IOC Matching', link: '/features/ioc-matching' },
+            { text: 'NTFS Analysis', link: '/features/ntfs-analysis' },
             { text: 'Stacking', link: '/features/stacking' },
             { text: 'Log Source Coverage', link: '/features/log-source-coverage' }
           ]

@@ -23,7 +23,7 @@ features:
     details: Mixed, FTS, LIKE, Fuzzy, and Regex. Full-text search, substring matching, typo-tolerant fuzzy, and pattern matching across millions of rows.
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6"/><circle cx="12" cy="12" r="3"/><path d="M12 15v3"/><path d="M8 15l-3 3"/><path d="M16 15l3 3"/><path d="M5 18v2"/><path d="M12 18v2"/><path d="M19 18v2"/></svg>'
     title: Process Inspector
-    details: Reconstruct process trees from Sysmon and Security logs with 4-tier threat scoring and 342 detection rules mapped to MITRE ATT&CK.
+    details: Reconstruct process trees from Sysmon and Security logs with 4-tier threat scoring, 342 chain rules + 13 standalone patterns mapped to MITRE ATT&CK.
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><line x1="8.5" y1="7.5" x2="15.5" y2="16.5"/><line x1="15.5" y1="7.5" x2="8.5" y2="16.5"/><line x1="6" y1="9" x2="6" y2="15"/><line x1="18" y1="9" x2="18" y2="15"/></svg>'
     title: Lateral Movement Tracker
     details: Network graph with multi-hop chain reconstruction and RDP session correlation. Detects brute force, password spray, Impacket, and 30 RMM tools.
@@ -41,13 +41,13 @@ features:
     details: Bookmarks, color-coded tags, conditional formatting with KAPE-aware presets, and full session save/restore.
 ---
 
-## What's New in v1.0.3-beta
+## What's New
 
+- **NTFS Analysis Tools** — Six tools for raw `$MFT` and `$J` files: ransomware scanning, timestomping detection, file activity heatmaps, ADS analysis, USN Journal forensics (11 categories), and resident data extraction
+- **VirusTotal Integration** — Single and bulk IOC lookups with persistent cache, configurable rate limiting, color-coded verdict badges, and auto-tagging
+- **Auto-Update** — In-app update notifications with download progress and one-click install
+- **Analyst Profiles** — Suppressions and baselines for Process Inspector false-positive management
 - **Attack Pattern Detection** — Automated MITRE ATT&CK-mapped findings for brute force, password spray, credential compromise, Impacket (5 variants), and RMM tool scanning (30 tools)
-- **RDP Session Grouping** — Grouped view mode for RDP sessions with expandable rows by source, target, user, and status
-- **Menu Bar Redesign** — Reorganized File, View, Actions, Tools, and Help menus with glassmorphism styling
-- **Row Checkbox Selection** — Per-row checkboxes with master select-all, invert selection, and copy/export selected rows
-- **Find Duplicates** — Scan any column for duplicate values and filter to matches with one click
 
 [Full changelog →](/about/changelog)
 
@@ -73,6 +73,8 @@ If you've hit Excel's 1M-row limit on a super-timeline, or you're tired of spinn
 | **Excel** | `.xlsx`, `.xls`, `.xlsm` | Streaming reader (XLSX) + legacy binary parser (XLS) with sheet selection |
 | **EVTX** | `.evtx` | Windows Event Log binary format |
 | **Plaso** | `.plaso` | Forensic timeline database |
+| **Raw $MFT** | `.mft` | NTFS Master File Table — direct import for NTFS analysis tools |
+| **Raw $J** | `.$J`, `.usn` | NTFS USN Journal (change journal) |
 
 ### Built for Scale
 
@@ -80,4 +82,4 @@ IRFlow Timeline uses a SQLite-backed architecture with streaming import, lazy in
 
 ### KAPE-Ready
 
-Automatic detection and pre-configuration for 15+ KAPE tool output formats including MFTECmd, EvtxECmd, Hayabusa, Chainsaw, AmcacheParser, and more. Open your KAPE output and start analyzing immediately with optimized column layouts and color rules.
+Automatic detection and pre-configuration for 24 KAPE tool output formats including MFTECmd, EvtxECmd, Hayabusa, Chainsaw, AmcacheParser, PECmd, RECmd, SBECmd, and more. Open your KAPE output and start analyzing immediately with optimized column layouts and color rules.

@@ -155,6 +155,16 @@ Complete list of auto-detected KAPE / EZ Tool profiles with their column configu
 | **Prioritized** | Type, Short, Desc |
 | **Auto-color** | Source |
 
+### PsortTimeline (Plaso)
+
+**Detection:** Columns include `Timestamp`, `TimestampDescription`, `Source`, `SourceLong`
+
+| Category | Columns |
+|----------|---------|
+| **Pinned** | Timestamp, Source |
+| **Prioritized** | TimestampDescription, SourceLong |
+| **Auto-color** | Source |
+
 ## Security Tool Profiles
 
 ### Hayabusa (Standard)
@@ -177,15 +187,65 @@ Complete list of auto-detected KAPE / EZ Tool profiles with their column configu
 | **Prioritized** | Details, ExtraFieldInfo, Computer |
 | **Auto-color** | Level |
 
-### Chainsaw
+### Chainsaw (Logons)
 
-**Detection:** Columns include `timestamp`, `name`, `level`, `status`
+**Detection:** Columns include `system_time`, `id`, `workstation_name`, `target_username`, `source_ip`, `logon_type`
 
 | Category | Columns |
 |----------|---------|
-| **Pinned** | timestamp, name, level |
-| **Prioritized** | computer, status, authors |
-| **Auto-color** | level |
+| **Pinned** | system_time, target_username |
+| **Prioritized** | source_ip, logon_type, workstation_name |
+| **Auto-color** | logon_type |
+
+### Chainsaw (Command Line Hunt)
+
+**Detection:** Columns include `system_time`, `id`, `detection_rules`, `Event.EventData.CommandLine`, `process_name`
+
+| Category | Columns |
+|----------|---------|
+| **Pinned** | system_time, detection_rules |
+| **Prioritized** | Event.EventData.CommandLine, process_name, computer_name |
+| **Auto-color** | detection_rules |
+
+### Chainsaw (Process Creation Hunt)
+
+**Detection:** Columns include `system_time`, `id`, `detection_rules`, `Event.EventData.Image`, `command_line`
+
+| Category | Columns |
+|----------|---------|
+| **Pinned** | system_time, detection_rules |
+| **Prioritized** | Event.EventData.Image, command_line, computer_name |
+| **Auto-color** | detection_rules |
+
+### Chainsaw (Registry Hunt)
+
+**Detection:** Columns include `system_time`, `id`, `detection_rules`, `Event.EventData.Details`, `target_object`
+
+| Category | Columns |
+|----------|---------|
+| **Pinned** | system_time, detection_rules |
+| **Prioritized** | Event.EventData.Details, target_object, computer_name |
+| **Auto-color** | detection_rules |
+
+### Chainsaw (File Creation Hunt)
+
+**Detection:** Columns include `system_time`, `id`, `detection_rules`, `Event.EventData.TargetFilename`, `image`
+
+| Category | Columns |
+|----------|---------|
+| **Pinned** | system_time, detection_rules |
+| **Prioritized** | Event.EventData.TargetFilename, image, computer_name |
+| **Auto-color** | detection_rules |
+
+### Chainsaw (Sigma)
+
+**Detection:** Columns include `Timestamp`, `RuleTitle`, `Level`, `Channel`, `MitreTactics`
+
+| Category | Columns |
+|----------|---------|
+| **Pinned** | Timestamp, RuleTitle, Level |
+| **Prioritized** | Channel, MitreTactics |
+| **Auto-color** | Level |
 
 ### BrowsingHistoryView
 
@@ -196,3 +256,12 @@ Complete list of auto-detected KAPE / EZ Tool profiles with their column configu
 | **Pinned** | Visit Time, URL, Title |
 | **Prioritized** | Web Browser, Visit Count, Visit Type |
 | **Auto-color** | Web Browser |
+
+### KAPE Copy Log
+
+**Detection:** Columns include `CopiedTimestamp`, `SourceFile`, `DestinationFile`, `SourceFileSha1`
+
+| Category | Columns |
+|----------|---------|
+| **Pinned** | CopiedTimestamp, SourceFile |
+| **Prioritized** | DestinationFile, SourceFileSha1 |

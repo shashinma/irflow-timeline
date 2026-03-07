@@ -176,9 +176,61 @@ Review matches in context. Common internal IPs or system paths may match IOC pat
 Paste IOC lists directly from threat intel reports — defanged notation like `hxxps[://]`, `[.]`, and `[dot]` is automatically cleaned before scanning.
 :::
 
+## VirusTotal Enrichment
+
+Enrich matched IOCs with VirusTotal reputation data. After running an IOC scan, you can look up individual indicators or enrich all matched IOCs in bulk.
+
+### API Key Setup
+
+1. In the IOC Matching modal, expand the **VirusTotal** section
+2. Enter your VirusTotal API key (free or premium)
+3. Configure rate limiting and cache settings:
+
+| Setting | Options | Default |
+|---------|---------|---------|
+| **Rate limit** | 4, 8, 12, 16 requests/minute | 4 req/min (free tier) |
+| **Cache TTL** | 1 hour, 6 hours, 12 hours, 24 hours, 48 hours, 7 days | 24 hours |
+
+Your API key is stored locally and never transmitted except to the VirusTotal API.
+
+### Single Lookup
+
+Right-click any cell and select **Lookup on VirusTotal** to query a single indicator. Results open in your browser on virustotal.com.
+
+| Indicator Type | VirusTotal URL |
+|---------------|----------------|
+| SHA256 / SHA1 / MD5 | `virustotal.com/gui/file/{hash}` |
+| Domain | `virustotal.com/gui/domain/{domain}` |
+| IPv4 / IPv6 | `virustotal.com/gui/ip-address/{ip}` |
+
+### Bulk Lookup
+
+After an IOC scan, click **Enrich N IOCs with VirusTotal** to look up all matched indicators in batch. Progress is reported via IPC as each IOC is processed. A **Cancel** button is available to stop in-flight lookups.
+
+### Persistent Cache
+
+Results are cached in a local SQLite database (`vt-cache.db`) to avoid redundant API calls. The cache stores the IOC value, category, full VT response, fetch timestamp, and detection score. Cached results are returned instantly on subsequent lookups until the configured TTL expires.
+
+### Verdict Badges
+
+After enrichment, a **VT** column appears in the data grid showing color-coded verdict badges:
+
+| Verdict | Color | Meaning |
+|---------|-------|---------|
+| **Malicious** | Red | Flagged as malicious by multiple engines |
+| **Suspicious** | Yellow | Flagged as suspicious by some engines |
+| **Clean** | Green | No detections |
+
+The VT column supports sorting and filtering — use the dropdown to filter by verdict.
+
+### Auto-Tagging
+
+Enriched rows are automatically tagged with their VT verdict (`malicious`, `suspicious`, or `clean`) for immediate filtering and reporting.
+
 ## See Also
 
 - [Bookmarks & Tags](/features/bookmarks-tags) — IOC matches auto-create per-IOC tags for categorization
 - [Process Inspector](/features/process-tree) — trace processes associated with matched indicators
 - [Lateral Movement Tracker](/features/lateral-movement) — correlate network IOCs with lateral movement patterns
 - [Persistence Analyzer](/features/persistence-analyzer) — match persisted executables against your IOC list
+- [NTFS Analysis](/features/ntfs-analysis) — sweep extracted file names and paths against IOC lists

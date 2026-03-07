@@ -97,14 +97,28 @@ For timestamp columns:
 
 You can also set date ranges by brush-selecting on the [Histogram](/features/histogram).
 
-### Advanced Filters
+### Advanced Filter Editor
 
-Open **View > Edit Filter** for SQL WHERE-style conditions:
+Open **View > Edit Filter** to build multi-condition filters with a visual editor:
 
-- Build complex filters with AND/OR logic
-- Combine multiple conditions on different columns
-- Use operators: equals, not equals, contains, not contains, starts with, ends with, greater than, less than, is empty, is not empty, regex
-- Save and load filter presets
+- **AND/OR logic** — each condition has a logic toggle to combine with AND or OR
+- **Column selector** — pick any column in the dataset
+- **Operators** — equals, not equals, contains, not contains, starts with, ends with, greater than, less than, is empty, is not empty, regex
+- **Multi-condition** — add as many conditions as needed; each row is a separate filter clause
+- **Live preview** — the grid updates as you build the filter
+
+Advanced filters are applied alongside column filters and checkbox filters, giving you layered filter composition.
+
+### Filter Presets
+
+Save frequently used filter configurations as named presets:
+
+1. Build your filter (column filters, advanced filters, checkbox filters)
+2. Open **View > Filter Presets**
+3. Enter a name and click **Save**
+4. Reload presets from the same menu in any session
+
+Presets persist to disk and are available across app restarts.
 
 ### Tag Filters
 
@@ -131,6 +145,17 @@ Toggle the highlight button in the search bar to visually highlight matching ter
 
 When [IOC Matching](/features/ioc-matching) highlights are also active, both work simultaneously — IOC matches appear in orange and search matches appear in amber, so you can distinguish between the two at a glance.
 
+## Find Duplicates
+
+Open **Actions > Find Duplicates** to identify repeated values in any column:
+
+1. Select a column from the dropdown
+2. Click **Find Duplicates** to scan
+3. Results show duplicate values and their occurrence counts (up to 100 displayed)
+4. Click **Filter to Duplicates** to apply a checkbox filter showing only rows with duplicate values
+
+This is useful for spotting reused filenames, repeated process command lines, duplicate IP connections, or any pattern where the same value appearing multiple times is significant.
+
 ## See Also
 
 - [Virtual Grid](/features/virtual-grid) — the core data interface where search results are displayed
@@ -138,3 +163,4 @@ When [IOC Matching](/features/ioc-matching) highlights are also active, both wor
 - [Histogram](/features/histogram) — brush-select a time range to filter before searching
 - [Stacking](/features/stacking) — frequency analysis to find outliers before targeted searching
 - [IOC Matching](/features/ioc-matching) — scan against threat intel indicator lists
+- [NTFS Analysis](/features/ntfs-analysis) — filter MFT and USN Journal data with advanced conditions
