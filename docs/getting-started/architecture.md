@@ -14,7 +14,7 @@ Technical overview of IRFlow Timeline's architecture for developers and contribu
 
 ### Renderer Process (React)
 
-**File:** `src/App.jsx` (~11,325 lines) + `src/detection-rules.js` (~380 lines)
+**File:** `src/App.jsx` (~19,100 lines) + `src/detection-rules.js` (~383 lines)
 
 The renderer runs in a sandboxed browser context with no direct Node.js access. All system operations go through the IPC bridge.
 
@@ -22,30 +22,35 @@ Responsibilities:
 - Grid rendering with virtual scrolling
 - User interaction handling
 - State management (React hooks)
-- Visualization rendering (histogram, process inspector, lateral movement graphs)
+- Visualization rendering (histogram, process inspector, lateral movement graphs, NTFS analysis panels)
+- 24 KAPE profile auto-detection with optimized column layouts
+- VirusTotal verdict display and enrichment UI
 - Theme management (dark/light)
 
 ### Preload Bridge
 
-**File:** `preload.js` (~107 lines)
+**File:** `preload.js` (~134 lines)
 
-The preload script creates a secure bridge between the renderer and main process using Electron's `contextBridge` API. It exposes a controlled set of IPC methods as `window.tle`.
+The preload script creates a secure bridge between the renderer and main process using Electron's `contextBridge` API. It exposes 132 methods and event listeners as `window.tle`, covering file ops, data queries, tag/bookmark ops, IOC matching, VirusTotal enrichment, NTFS analysis, analyst profiles, auto-updates, session persistence, and filter presets.
 
 ### Main Process (Electron)
 
-**File:** `main.js` (~1,272 lines)
+**Files:** `main.js` (~1,891 lines) + `updater.js` (~544 lines) + `logger.js` (~46 lines)
 
 The main process runs with full Node.js access and manages:
 - Window lifecycle and native menus
-- IPC handler registration (46 handlers)
+- IPC handler registration (69 handlers via `safeHandle()`)
 - File dialog management
-- Export orchestration (CSV, TSV, XLSX, XLS, HTML)
+- Export orchestration (CSV, TSV, XLSX, XLS, HTML, PDF)
 - Session save/load coordination
+- VirusTotal API integration with persistent SQLite cache (`vt-cache.db`)
+- Auto-update lifecycle (check → download → install) via `electron-updater`
+- Shared debug logger with 5MB rotation and 50-line write buffer (`~/tle-debug.log`)
 - macOS integration (vibrancy, dark mode, traffic lights)
 
 ### Data Engine (SQLite)
 
-**File:** `db.js` (~4,763 lines)
+**File:** `db.js` (~12,797 lines)
 
 The `TimelineDB` class wraps `better-sqlite3` with forensic-analysis-specific operations:
 
@@ -58,11 +63,20 @@ CREATE TABLE tags (rowid INTEGER, tag TEXT, PRIMARY KEY(rowid, tag));
 CREATE TABLE color_rules (id, col_name, condition, value, bg_color, fg_color);
 ```
 
-**Custom SQL functions:**
+**Custom SQL functions (5):**
 - `REGEXP(pattern, value)` — deterministic regex matching
 - `FUZZY_MATCH(text, term)` — n-gram similarity for typo tolerance
 - `EXTRACT_DATE(value)` — normalize any timestamp to `yyyy-MM-dd`
 - `EXTRACT_DATETIME_MINUTE(value)` — normalize to `yyyy-MM-dd HH:mm`
+- `SORT_DATETIME(value)` — normalize any timestamp to sortable ISO string (also used for expression indexes)
+
+**NTFS analysis modules:**
+- Ransomware analysis — extension scanning, ransom note detection, USN cross-reference, timing evidence
+- Timestomping detection — SI vs FN timestamp comparison with severity scoring
+- File activity heatmap — hourly/daily buckets and 7×24 day-of-week matrix
+- ADS analyzer — Zone.Identifier parsing, suspicious stream detection
+- USN Journal analysis — 11 forensic categories (renames, deletions, creations, exfiltration, execution, persistence, suspicious paths, security changes, data overwrite, stream changes, close patterns)
+- USN path resolution — parent reference chain-walking with MFT cross-reference
 
 **Performance tuning (phase-dependent):**
 - Import: `journal_mode=OFF`, 1GB cache, 64KB pages, `threads=4`
@@ -73,7 +87,7 @@ CREATE TABLE color_rules (id, col_name, condition, value, bg_color, fg_color);
 
 ### Parser Layer
 
-**File:** `parser.js` (~2,133 lines)
+**File:** `parser.js` (~2,531 lines)
 
 Streaming parsers convert source files into SQLite batch inserts:
 
@@ -82,6 +96,8 @@ Streaming parsers convert source files into SQLite batch inserts:
 - **XLS:** SheetJS in-memory reader for legacy binary Excel format
 - **EVTX:** `@ts-evtx` binary parsing with dynamic schema discovery
 - **Plaso:** Direct SQLite query via `better-sqlite3`
+- **$MFT:** Two-pass binary parser — pass 1 builds directory map + FN attribute map, pass 2 reconstructs full paths. Outputs 22 columns matching MFTECmd format. Includes SI vs FN timestamp comparison and resident data detection
+- **$J (USN Journal):** Binary parser for raw `$UsnJrnl:$J` files with reason flag decoding and file reference extraction
 
 ## Data Flow
 
@@ -125,6 +141,7 @@ UI Action → IPC → db.queryRows() → SQL Query → Result Set → IPC → Gr
 | **SheetJS (xlsx)** | ^0.18.5 | Legacy XLS parsing |
 | **@ts-evtx** | ^1.1.1 | EVTX binary parsing |
 | **csv-parser** | ^3.0.0 | CSV parsing |
+| **electron-updater** | ^6.6.7 | Auto-update framework |
 | **electron-builder** | ^25.1.8 | App packaging |
 
 ## Build Targets
@@ -139,7 +156,8 @@ UI Action → IPC → db.queryRows() → SQL Query → Result Set → IPC → Gr
 ## Security Model
 
 - **Context isolation** enabled — renderer has no Node.js access
-- **Preload bridge** exposes only whitelisted IPC methods
+- **Preload bridge** exposes only whitelisted IPC methods (132 entries)
 - **No remote content** — purely local data processing
 - **Hardened runtime** enabled for macOS distribution
-- **No network requests** — all processing is offline
+- **Minimal network access** — only VirusTotal API lookups (opt-in, requires user-provided API key) and auto-update checks. All forensic processing is fully offline
+- **VirusTotal API key** stored locally in `userData/vt-settings.json`, never transmitted except to VirusTotal's API endpoint
