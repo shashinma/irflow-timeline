@@ -1,95 +1,27 @@
 {
   "name": "irflow-timeline",
-  "version": "1.0.0-beta",
+  "version": "1.0.3",
   "description": "IRFlow Timeline — High-performance DFIR timeline viewer for macOS (30-50GB+ CSV/XLSX)",
   "main": "electron/main.js",
   "author": "DFIR Community",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "build:renderer": "vite build",
     "start": "npm run build:renderer && electron .",
-    "dist": "npm run build:renderer && electron-builder --mac",
-    "dist:dmg": "npm run build:renderer && electron-builder --mac dmg",
-    "dist:universal": "npm run build:renderer && electron-builder --mac --universal",
+    "dist": "npm run build:renderer && electron-builder --config electron-builder.config.cjs --mac",
+    "dist:release": "npm run dist",
+    "dist:smoke": "npm run build:renderer && SKIP_NOTARIZE=1 CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --config electron-builder.config.cjs --mac",
+    "dist:dmg": "npm run build:renderer && electron-builder --config electron-builder.config.cjs --mac dmg",
+    "dist:universal": "npm run build:renderer && electron-builder --config electron-builder.config.cjs --mac --universal",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "postinstall": "patch-package",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
-  "build": {
-    "appId": "com.dfir.irflow-timeline",
-    "productName": "IRFlow Timeline",
-    "mac": {
-      "category": "public.app-category.developer-tools",
-      "icon": "assets/icon.icns",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "universal"
-          ]
-        }
-      ],
-      "darkModeSupport": true,
-      "hardenedRuntime": true
-    },
-    "dmg": {
-      "title": "IRFlow Timeline",
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*",
-      "assets/**/*"
-    ],
-    "asarUnpack": [
-      "node_modules/better-sqlite3/**"
-    ],
-    "directories": {
-      "output": "release"
-    },
-    "fileAssociations": [
-      {
-        "ext": "csv",
-        "name": "CSV File",
-        "role": "Viewer"
-      },
-      {
-        "ext": "tsv",
-        "name": "TSV File",
-        "role": "Viewer"
-      },
-      {
-        "ext": "xlsx",
-        "name": "Excel File",
-        "role": "Viewer"
-      },
-      {
-        "ext": "plaso",
-        "name": "Plaso File",
-        "role": "Viewer"
-      },
-      {
-        "ext": "evtx",
-        "name": "EVTX File",
-        "role": "Viewer"
-      }
-    ]
-  },
   "devDependencies": {
+    "@electron/notarize": "^3.1.1",
     "@electron/rebuild": "^3.6.0",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.0",
@@ -107,6 +39,7 @@
     "@ts-evtx/messages": "^1.1.1",
     "better-sqlite3": "^11.7.0",
     "csv-parser": "^3.0.0",
+    "electron-updater": "^6.6.7",
     "exceljs": "^4.4.0",
     "xlsx": "^0.18.5"
   }

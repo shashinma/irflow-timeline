@@ -10,12 +10,19 @@ const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require("electron")
 const path = require("path");
 const fs = require("fs");
 const fsp = require("fs/promises");
+const os = require("os");
+const https = require("https");
 const TimelineDB = require("./db");
-const { parseFile, getXLSXSheets } = require("./parser");
+const { parseFile, getXLSXSheets, extractResidentData } = require("./parser");
+const { createUpdateController } = require("./updater");
+
+// Raise V8 heap limit to 16GB — needed for importing large forensic images (20GB+)
+app.commandLine.appendSwitch("js-flags", "--max-old-space-size=16384");
 
 let mainWindow;
 const db = new TimelineDB();
 let tabCounter = 0;
+const _tabMeta = new Map(); // tabId -> { filePath, sourceFormat }
 
 // ── Recent files persistence ──────────────────────────────────────
 const RECENT_FILES_MAX = 10;
@@ -32,32 +39,20 @@ function _saveRecentFiles(files) {
   try { fs.writeFileSync(_recentFilesPath, JSON.stringify(files), "utf8"); } catch {}
 }
 
+let _menuRebuildTimer = null;
 function addRecentFile(filePath) {
   const files = _loadRecentFiles().filter((f) => f !== filePath);
   files.unshift(filePath);
   if (files.length > RECENT_FILES_MAX) files.length = RECENT_FILES_MAX;
   _saveRecentFiles(files);
-  _rebuildMenu();
+  // Debounce menu rebuild — batch imports can call addRecentFile rapidly
+  if (_menuRebuildTimer) clearTimeout(_menuRebuildTimer);
+  _menuRebuildTimer = setTimeout(() => { _menuRebuildTimer = null; _rebuildMenu(); }, 500);
   safeSend("recent-files-updated", files);
 }
 
-// ── Debug trace logger (writes to stderr + file) ────────────────
-const debugLogPath = path.join(require("os").homedir(), "tle-debug.log");
-let _logBuf = [];
-function dbg(tag, msg, data) {
-  const ts = new Date().toISOString();
-  const line = `[${ts}] [${tag}] ${msg}${data !== undefined ? " " + JSON.stringify(data, null, 0) : ""}`;
-  console.error(line);
-  _logBuf.push(line);
-  if (_logBuf.length >= 50) _flushLog();
-}
-function _flushLog() {
-  if (!_logBuf.length) return;
-  try { fs.appendFileSync(debugLogPath, _logBuf.join("\n") + "\n"); } catch {}
-  _logBuf = [];
-}
-setInterval(_flushLog, 2000);
-process.on("exit", _flushLog);
+// ── Debug trace logger (shared singleton — see logger.js) ─────
+const { dbg, debugLogPath } = require("./logger");
 dbg("INIT", `IRFlow Timeline starting, debug log: ${debugLogPath}`);
 
 // ── Global crash guards ──────────────────────────────────────────
@@ -90,6 +85,12 @@ function safeHandle(channel, handler) {
   });
 }
 
+// Return mainWindow if it's still alive, otherwise null.
+// Electron dialog APIs accept null/undefined — they show a parentless dialog.
+function _activeWindow() {
+  return (mainWindow && !mainWindow.isDestroyed()) ? mainWindow : null;
+}
+
 function safeSend(channel, data) {
   try {
     if (mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents) {
@@ -98,16 +99,21 @@ function safeSend(channel, data) {
   } catch (e) { /* window closed mid-send */ }
 }
 
+const updateController = createUpdateController({
+  getWindow: _activeWindow,
+  sendStatus: (payload) => safeSend("updater-state", payload),
+});
+
 // ── Import queue — serialize file imports to prevent concurrent memory exhaustion ──
 const _importQueue = [];
 let _importRunning = false;
 const _pendingIndexTabs = []; // tabs waiting for index/FTS build (deferred until queue drains)
 
-function enqueueImport(filePath) {
+function enqueueImport(filePath, opts) {
   let fileName; try { fileName = decodeURIComponent(path.basename(filePath)); } catch { fileName = path.basename(filePath); }
   let fileSize = 0; try { fileSize = fs.statSync(filePath).size; } catch {}
-  _importQueue.push({ filePath, fileName, fileSize });
-  addRecentFile(filePath);
+  _importQueue.push({ filePath, fileName, fileSize, ...opts });
+  if (!opts?.skipRecent) addRecentFile(filePath);
   _broadcastQueue();
   _processQueue();
 }
@@ -120,30 +126,39 @@ function _broadcastQueue() {
 async function _processQueue() {
   if (_importRunning || _importQueue.length === 0) return;
   _importRunning = true;
-  const item = _importQueue.shift();
-  _broadcastQueue();
 
-  // Log memory before import
-  const memBefore = process.memoryUsage();
-  dbg("QUEUE", `Starting import: ${item.fileName}`, { heapMB: Math.round(memBefore.heapUsed / 1048576), rssMB: Math.round(memBefore.rss / 1048576), queueRemaining: _importQueue.length });
+  while (_importQueue.length > 0) {
+    const item = _importQueue.shift();
+    _broadcastQueue();
 
-  try {
-    await importFile(item.filePath);
-  } catch (err) {
-    dbg("QUEUE", `importFile failed for ${item.fileName}`, { error: err?.message });
+    // Log memory before import
+    const memBefore = process.memoryUsage();
+    dbg("QUEUE", `Starting import: ${item.fileName}`, { heapMB: Math.round(memBefore.heapUsed / 1048576), rssMB: Math.round(memBefore.rss / 1048576), queueRemaining: _importQueue.length });
+
+    try {
+      await importFile(item.filePath, item.tabId, item.sheetName);
+    } catch (err) {
+      dbg("QUEUE", `importFile failed for ${item.fileName}`, { error: err?.message });
+      // Notify renderer so it can dismiss the loading state for this file
+      safeSend("import-error", {
+        tabId: item.tabId || null,
+        fileName: item.fileName,
+        error: err?.message || "Import failed",
+      });
+    }
+    _broadcastQueue();
+
+    if (_importQueue.length > 0) {
+      // GC-friendly pause: yield to event loop + request GC before next import
+      await new Promise((r) => setTimeout(r, 100));
+      if (global.gc) { try { global.gc(); } catch {} }
+    }
   }
+
   _importRunning = false;
   _broadcastQueue();
-
-  if (_importQueue.length > 0) {
-    // GC-friendly pause: yield to event loop + request GC before next import
-    await new Promise((r) => setTimeout(r, 100));
-    if (global.gc) { try { global.gc(); } catch {} }
-    _processQueue();
-  } else {
-    // Queue fully drained — now build deferred indexes/FTS
-    _buildDeferredIndexes();
-  }
+  // Queue fully drained — now build deferred indexes/FTS
+  _buildDeferredIndexes();
 }
 
 function _buildDeferredIndexes() {
@@ -151,22 +166,44 @@ function _buildDeferredIndexes() {
   const tabs = _pendingIndexTabs.splice(0);
   dbg("QUEUE", `Building deferred indexes for ${tabs.length} tabs`);
 
-  // Build indexes sequentially to avoid memory spikes
-  let chain = Promise.resolve();
-  for (const tabId of tabs) {
-    chain = chain.then(() =>
+  // Limit concurrency to 2 to prevent memory exhaustion — each index build
+  // allocates 256MB-1GB cache, so 10 concurrent builds could OOM.
+  const MAX_CONCURRENT = 2;
+  let active = 0;
+  let idx = 0;
+
+  const buildNext = () => {
+    while (active < MAX_CONCURRENT && idx < tabs.length) {
+      const tabId = tabs[idx++];
+      active++;
       db.buildIndexesAsync(tabId, (progress) => {
         safeSend("index-progress", { tabId, ...progress });
-      })
-    ).then(() =>
-      db.buildFtsAsync(tabId, (progress) => {
-        safeSend("fts-progress", { tabId, ...progress });
-      })
-    ).catch((err) => {
-      console.error(`Index/FTS build failed for tab ${tabId}:`, err?.message || err);
-      safeSend("fts-progress", { tabId, indexed: 0, total: 0, done: true, error: err?.message });
-    });
-  }
+      }).then(() => {
+        // After MFT indexes finish, re-resolve any USN Journal tabs
+        const tabInfo = _tabMeta.get(tabId);
+        if (tabInfo?.sourceFormat === "raw-mft") {
+          for (const [tid, tmeta] of _tabMeta) {
+            if (tmeta.sourceFormat === "raw-usnjrnl") {
+              const reResolve = db.resolveUsnPaths(tid, tabId);
+              if (reResolve.resolved > 0) {
+                safeSend("usn-paths-updated", { tabId: tid, resolveStats: reResolve });
+              }
+            }
+          }
+        }
+        return db.buildFtsAsync(tabId, (progress) => {
+          safeSend("fts-progress", { tabId, ...progress });
+        });
+      }).catch((err) => {
+        console.error(`Index/FTS build failed for tab ${tabId}:`, err?.message || err);
+        safeSend("fts-progress", { tabId, indexed: 0, total: 0, done: true, error: err?.message });
+      }).finally(() => {
+        active--;
+        buildNext();
+      });
+    }
+  };
+  buildNext();
 }
 
 // ── macOS lifecycle ────────────────────────────────────────────────
@@ -183,6 +220,8 @@ app.on("activate", () => {
 
 app.on("before-quit", () => {
   db.closeAll();
+  // Close VT cache DB if it was opened
+  try { if (_vtCacheDb) { _vtCacheDb.close(); _vtCacheDb = null; } } catch {}
 });
 
 app.on("open-file", (event, filePath) => {
@@ -226,6 +265,7 @@ function createWindow() {
       enqueueImport(app.pendingFilePath);
       delete app.pendingFilePath;
     }
+    updateController.scheduleStartupCheck();
   });
 
   mainWindow.on("closed", () => { mainWindow = null; });
@@ -242,21 +282,78 @@ function createWindow() {
 }
 
 // ── File import ────────────────────────────────────────────────────
-async function importFile(filePath) {
-  const tabId = `tab_${++tabCounter}_${Date.now()}`;
+async function importFile(filePath, preTabId, preSheetName) {
+  const tabId = preTabId || `tab_${++tabCounter}_${Date.now()}`;
   let fileName; try { fileName = decodeURIComponent(path.basename(filePath)); } catch { fileName = path.basename(filePath); }
   const ext = path.extname(filePath).toLowerCase();
-  dbg("IMPORT", `importFile called`, { filePath, tabId, ext });
+  dbg("IMPORT", `importFile called`, { filePath, tabId, ext, preSheetName });
 
-  // For XLSX, check for multiple sheets
-  let sheetName = undefined;
-  if (ext === ".xlsx" || ext === ".xls" || ext === ".xlsm") {
+  // Pre-flight check for very large files
+  let fileSize = 0;
+  try { fileSize = fs.statSync(filePath).size; } catch {}
+  const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024 * 1024; // 10GB
+
+  // XLSX/XLSM this large is not a practical import target for the current parser.
+  // Fail fast instead of attempting decompression/parsing and crashing later.
+  if ((ext === ".xlsx" || ext === ".xlsm") && fileSize > LARGE_FILE_THRESHOLD) {
+    const sizeGB = (fileSize / (1024 ** 3)).toFixed(1);
+    const limitGB = (LARGE_FILE_THRESHOLD / (1024 ** 3)).toFixed(0);
+    if (mainWindow) {
+      await dialog.showMessageBox(_activeWindow(), {
+        type: "error",
+        title: "XLSX Too Large",
+        message: `This workbook is ${sizeGB} GB`,
+        detail: `XLSX/XLSM imports above ${limitGB} GB are not supported in this build. Convert the workbook to CSV and import the CSV instead.`,
+        buttons: ["OK"],
+      });
+    }
+    dbg("IMPORT", `Blocked oversized XLSX import`, { filePath, sizeGB, limitGB });
+    safeSend("import-error", {
+      tabId,
+      fileName,
+      error: `XLSX/XLSM imports above ${limitGB} GB are not supported — convert to CSV first`,
+    });
+    return;
+  }
+
+  if (fileSize > LARGE_FILE_THRESHOLD && mainWindow) {
+    const sizeGB = (fileSize / (1024 ** 3)).toFixed(1);
+    const ramGB = Math.round(os.totalmem() / (1024 ** 3));
+    const { response } = await dialog.showMessageBox(_activeWindow(), {
+      type: "warning",
+      title: "Large File Warning",
+      message: `This file is ${sizeGB} GB`,
+      detail: `Importing very large files requires significant memory and may take a long time. The application may become unresponsive or crash.\n\nSystem RAM: ${ramGB} GB\n\nFor Plaso files this large, consider using psort to export a filtered CSV first.`,
+      buttons: ["Import Anyway", "Cancel"],
+      defaultId: 1,
+      cancelId: 1,
+    });
+    if (response === 1) {
+      dbg("IMPORT", `User cancelled large file import`, { filePath, sizeGB });
+      safeSend("import-error", { tabId, fileName, error: `Import cancelled — file is ${sizeGB} GB` });
+      return;
+    }
+    dbg("IMPORT", `User chose to proceed with large file`, { filePath, sizeGB, ramGB });
+  }
+
+  // If sheetName is pre-assigned (from select-sheet or session restore), skip sheet detection
+  let sheetName = preSheetName;
+  if (sheetName && (ext === ".xlsx" || ext === ".xlsm") && !Number.isFinite(Number(sheetName))) {
+    try {
+      const sheets = await getXLSXSheets(filePath);
+      const matched = sheets.find((s) => s.name === sheetName);
+      if (matched) sheetName = matched.id;
+    } catch (e) {
+      dbg("IMPORT", `sheet name remap failed`, { filePath, sheetName, error: e.message });
+    }
+  }
+  if (!sheetName && (ext === ".xlsx" || ext === ".xls" || ext === ".xlsm")) {
     try {
       dbg("IMPORT", `getXLSXSheets calling...`, { filePath });
       const sheets = await getXLSXSheets(filePath);
       dbg("IMPORT", `getXLSXSheets returned`, { sheetCount: sheets.length, sheets: sheets.map(s => s.name) });
       if (sheets.length > 1) {
-        // Ask user which sheet
+        // Ask user which sheet — import will be re-enqueued by select-sheet handler
         safeSend("sheet-selection", {
           tabId,
           fileName,
@@ -272,14 +369,13 @@ async function importFile(filePath) {
   }
 
   dbg("IMPORT", `calling startImport`, { tabId, sheetName });
-  startImport(filePath, tabId, fileName, sheetName);
+  await startImport(filePath, tabId, fileName, sheetName, fileSize);
 }
 
-async function startImport(filePath, tabId, fileName, sheetName) {
+async function startImport(filePath, tabId, fileName, sheetName, preFileSize) {
   dbg("IMPORT", `startImport begin`, { filePath, tabId, fileName, sheetName });
-  // Get file size for large-file warnings
-  let fileSize = 0;
-  try { fileSize = fs.statSync(filePath).size; } catch {}
+  let fileSize = preFileSize || 0;
+  if (!fileSize) { try { fileSize = fs.statSync(filePath).size; } catch {} }
   dbg("IMPORT", `fileSize`, { fileSize });
 
   // Notify renderer that import has started
@@ -292,6 +388,7 @@ async function startImport(filePath, tabId, fileName, sheetName) {
 
   try {
     dbg("IMPORT", `calling parseFile...`);
+    let _lastMemCheck = 0;
     const result = await parseFile(filePath, tabId, db, (rows, bytesRead, totalBytes) => {
       safeSend("import-progress", {
         tabId,
@@ -300,8 +397,55 @@ async function startImport(filePath, tabId, fileName, sheetName) {
         totalBytes,
         percent: totalBytes > 0 ? Math.round((bytesRead / totalBytes) * 100) : 0,
       });
-    }, sheetName);
+
+      // Periodic memory check — every 30s during import
+      const now = Date.now();
+      if (now - _lastMemCheck > 30000) {
+        _lastMemCheck = now;
+        const mem = process.memoryUsage();
+        const heapGB = mem.heapUsed / (1024 ** 3);
+        const rssGB = mem.rss / (1024 ** 3);
+        dbg("IMPORT", `Memory check during import`, {
+          heapGB: heapGB.toFixed(2), rssGB: rssGB.toFixed(2),
+          rowsImported: rows, percent: totalBytes > 0 ? Math.round((bytesRead / totalBytes) * 100) : 0,
+        });
+        // Warn if heap > 12GB (75% of 16GB limit)
+        if (heapGB > 12) {
+          dbg("IMPORT", `WARNING: heap usage ${heapGB.toFixed(1)}GB approaching 16GB limit`);
+          safeSend("import-memory-warning", {
+            tabId, heapGB: heapGB.toFixed(1), rssGB: rssGB.toFixed(1),
+          });
+        }
+      }
+    }, sheetName, fileSize);
     dbg("IMPORT", `parseFile complete`, { headers: result.headers?.length, rowCount: result.rowCount, tsColumns: result.tsColumns?.length });
+
+    // Track original file path + format for features like resident data extraction
+    _tabMeta.set(tabId, { filePath, sourceFormat: result.sourceFormat || null });
+
+    // ── USN Journal Rewind: resolve parent paths from the journal's own directory records ──
+    let resolveStats = null;
+    if (result.sourceFormat === "raw-usnjrnl") {
+      let mftTabId = null;
+      for (const [tid, tmeta] of _tabMeta) {
+        if (tmeta.sourceFormat === "raw-mft") { mftTabId = tid; break; }
+      }
+      dbg("IMPORT", `Resolving USN parent paths (rewind)`, { mftAvailable: !!mftTabId });
+      resolveStats = db.resolveUsnPaths(tabId, mftTabId);
+      dbg("IMPORT", `USN path resolution complete`, resolveStats);
+    }
+
+    // ── MFT imported: re-resolve any existing USN Journal tabs ──
+    if (result.sourceFormat === "raw-mft") {
+      for (const [tid, tmeta] of _tabMeta) {
+        if (tmeta.sourceFormat === "raw-usnjrnl") {
+          dbg("IMPORT", `Re-resolving USN paths for ${tid} with new MFT data`);
+          const reResolve = db.resolveUsnPaths(tid, tabId);
+          dbg("IMPORT", `USN re-resolution complete`, reResolve);
+          safeSend("usn-paths-updated", { tabId: tid, resolveStats: reResolve });
+        }
+      }
+    }
 
     // Fetch initial window of data (windowed — not all rows)
     dbg("IMPORT", `querying initial rows...`);
@@ -326,6 +470,8 @@ async function startImport(filePath, tabId, fileName, sheetName) {
       initialRows: initialData.rows,
       totalFiltered: initialData.totalFiltered,
       emptyColumns,
+      sourceFormat: result.sourceFormat || null,
+      resolveStats,
     });
 
     // Defer index/FTS builds when more imports are queued to avoid memory spikes
@@ -337,6 +483,21 @@ async function startImport(filePath, tabId, fileName, sheetName) {
       db.buildIndexesAsync(tabId, (progress) => {
         safeSend("index-progress", { tabId, ...progress });
       }).then(() => {
+        // After MFT indexes finish, re-resolve any USN Journal tabs that
+        // missed MFT augmentation because the db was busy during their import
+        const tabInfo = _tabMeta.get(tabId);
+        if (tabInfo?.sourceFormat === "raw-mft") {
+          for (const [tid, tmeta] of _tabMeta) {
+            if (tmeta.sourceFormat === "raw-usnjrnl") {
+              dbg("IMPORT", `Post-index re-resolving USN paths for ${tid} with MFT ${tabId}`);
+              const reResolve = db.resolveUsnPaths(tid, tabId);
+              dbg("IMPORT", `USN post-index re-resolution complete`, reResolve);
+              if (reResolve.resolved > 0) {
+                safeSend("usn-paths-updated", { tabId: tid, resolveStats: reResolve });
+              }
+            }
+          }
+        }
         return db.buildFtsAsync(tabId, (progress) => {
           safeSend("fts-progress", { tabId, ...progress });
         });
@@ -361,21 +522,24 @@ async function startImport(filePath, tabId, fileName, sheetName) {
 
 // Open file dialog
 safeHandle("open-file-dialog", async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
+  const result = await dialog.showOpenDialog(_activeWindow(), {
     properties: ["openFile", "multiSelections"],
     filters: [
-      { name: "Timeline Files", extensions: ["csv", "tsv", "txt", "log", "xlsx", "xls", "plaso", "evtx"] },
+      { name: "All Supported Files", extensions: ["*"] },
       { name: "CSV Files", extensions: ["csv", "tsv", "txt", "log"] },
       { name: "Excel Files", extensions: ["xlsx", "xls", "xlsm"] },
-      { name: "Plaso Files", extensions: ["plaso"] },
       { name: "EVTX Files", extensions: ["evtx"] },
-      { name: "All Files", extensions: ["*"] },
+      { name: "Plaso Files", extensions: ["plaso"] },
+      { name: "NTFS Artifacts ($MFT, $J)", extensions: ["mft", "bin"] },
     ],
   });
   if (result.canceled) return null;
   for (const fp of result.filePaths) enqueueImport(fp);
   return true;
 });
+
+safeHandle("check-for-updates", async () => updateController.checkForUpdatesFromRenderer());
+safeHandle("install-update", async () => updateController.installUpdate());
 
 // Recent files
 safeHandle("get-recent-files", () => _loadRecentFiles());
@@ -438,6 +602,10 @@ safeHandle("get-all-tag-data", (event, { tabId }) => {
   return db.getAllTagData(tabId);
 });
 
+safeHandle("get-rows-by-ids", (event, { tabId, rowIds }) => {
+  return db.getRowsByIds(tabId, rowIds);
+});
+
 safeHandle("get-bookmarked-ids", (event, { tabId }) => {
   return db.getBookmarkedIds(tabId);
 });
@@ -449,7 +617,7 @@ safeHandle("bulk-add-tags", (event, { tabId, tagMap }) => {
 
 // IOC matching
 safeHandle("load-ioc-file", async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
+  const result = await dialog.showOpenDialog(_activeWindow(), {
     properties: ["openFile"],
     filters: [
       { name: "IOC Files", extensions: ["txt", "csv", "ioc", "tsv", "xlsx", "xls"] },
@@ -549,7 +717,15 @@ safeHandle("match-iocs", (event, { tabId, iocPatterns, batchSize }) => {
 
 // Close tab
 safeHandle("close-tab", (event, { tabId }) => {
-  db.closeTab(tabId);
+  // Remove from pending index queue so deferred build doesn't fire on a closed DB
+  const pendingIdx = _pendingIndexTabs.indexOf(tabId);
+  if (pendingIdx !== -1) _pendingIndexTabs.splice(pendingIdx, 1);
+  try {
+    db.closeTab(tabId);
+  } finally {
+    // Always clean up metadata even if db.closeTab throws
+    _tabMeta.delete(tabId);
+  }
   return true;
 });
 
@@ -575,13 +751,12 @@ safeHandle("get-group-values", (event, { tabId, groupCol, options }) => {
 
 // Export filtered data (CSV, TSV, XLSX, XLS)
 safeHandle("export-filtered", async (event, { tabId, options }) => {
-  const result = await dialog.showSaveDialog(mainWindow, {
+  const result = await dialog.showSaveDialog(_activeWindow(), {
     defaultPath: `filtered_export.csv`,
     filters: [
       { name: "CSV (Comma-separated)", extensions: ["csv"] },
       { name: "TSV (Tab-separated)", extensions: ["tsv"] },
       { name: "Excel Workbook (.xlsx)", extensions: ["xlsx"] },
-      { name: "Excel 97-2003 (.xls)", extensions: ["xls"] },
     ],
   });
   if (result.canceled) return false;
@@ -591,8 +766,8 @@ safeHandle("export-filtered", async (event, { tabId, options }) => {
 
   const ext = path.extname(result.filePath).toLowerCase();
 
-  // Excel export (XLSX or XLS)
-  if (ext === ".xlsx" || ext === ".xls") {
+  // Excel export (XLSX)
+  if (ext === ".xlsx") {
     const ExcelJS = require("exceljs");
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Export");
@@ -607,34 +782,38 @@ safeHandle("export-filtered", async (event, { tabId, options }) => {
       cell.font = { bold: true, color: { argb: "FF58A6FF" } };
     });
 
-    // Stream rows
+    // Track max column widths during row iteration (single-pass, no second iteration)
+    const colCount = exportData.headers.length;
+    const maxLens = new Array(colCount);
+    for (let i = 0; i < colCount; i++) maxLens[i] = (exportData.headers[i] || "").length;
+
+    // Stream rows — guard against tab close during iteration
     let count = 0;
-    for (const rawRow of exportData.iterator) {
-      const values = exportData.safeCols.map((sc) => rawRow[sc] || "");
-      sheet.addRow(values);
-      count++;
-      if (count % 100000 === 0) {
-        safeSend("export-progress", { count });
+    try {
+      for (const rawRow of exportData.iterator) {
+        const values = exportData.safeCols.map((sc, i) => {
+          const val = rawRow[sc] ?? "";
+          const len = val.length;
+          if (len > maxLens[i]) maxLens[i] = len;
+          return val;
+        });
+        sheet.addRow(values);
+        count++;
+        if (count % 100000 === 0) {
+          safeSend("export-progress", { count });
+        }
       }
+    } catch (e) {
+      // Tab closed or DB error during export — save what we have
+      dbg("MAIN", `XLSX export interrupted after ${count} rows`, { error: e.message });
     }
 
-    // Auto-fit column widths (approximate)
+    // Apply column widths from tracked maximums
     sheet.columns.forEach((col, i) => {
-      const header = exportData.headers[i] || "";
-      let maxLen = header.length;
-      col.eachCell({ includeEmpty: false }, (cell) => {
-        const len = cell.value ? String(cell.value).length : 0;
-        if (len > maxLen) maxLen = len;
-      });
-      col.width = Math.min(Math.max(maxLen + 2, 8), 60);
+      col.width = Math.min(Math.max((maxLens[i] || 8) + 2, 8), 60);
     });
 
-    if (ext === ".xls") {
-      // XLS: write as XLSX buffer then save (ExcelJS outputs OOXML; .xls extension for compat)
-      await workbook.xlsx.writeFile(result.filePath);
-    } else {
-      await workbook.xlsx.writeFile(result.filePath);
-    }
+    await workbook.xlsx.writeFile(result.filePath);
     return { count, filePath: result.filePath };
   }
 
@@ -645,25 +824,34 @@ safeHandle("export-filtered", async (event, { tabId, options }) => {
   // Write header
   writeStream.write(exportData.headers.join(delimiter) + "\n");
 
-  // Stream rows
+  // Stream rows with backpressure handling — guard against tab close during iteration
   let count = 0;
-  for (const rawRow of exportData.iterator) {
-    const values = exportData.safeCols.map((sc) => {
-      const val = rawRow[sc] || "";
-      if (delimiter === "\t") {
-        // TSV: escape tabs and newlines within values
-        return val.includes("\t") || val.includes("\n") ? val.replace(/\t/g, " ").replace(/\n/g, " ") : val;
+  try {
+    for (const rawRow of exportData.iterator) {
+      const values = exportData.safeCols.map((sc) => {
+        const val = rawRow[sc] ?? "";
+        if (delimiter === "\t") {
+          // TSV: escape tabs and newlines within values
+          return val.includes("\t") || val.includes("\n") ? val.replace(/\t/g, " ").replace(/\n/g, " ") : val;
+        }
+        // CSV: quote fields containing comma, quote, or newline
+        return val.includes(",") || val.includes('"') || val.includes("\n")
+          ? `"${val.replace(/"/g, '""')}"`
+          : val;
+      });
+      const ok = writeStream.write(values.join(delimiter) + "\n");
+      if (!ok) {
+        // Internal buffer full — wait for drain before continuing
+        await new Promise((r) => writeStream.once("drain", r));
       }
-      // CSV: quote fields containing comma, quote, or newline
-      return val.includes(",") || val.includes('"') || val.includes("\n")
-        ? `"${val.replace(/"/g, '""')}"`
-        : val;
-    });
-    writeStream.write(values.join(delimiter) + "\n");
-    count++;
-    if (count % 100000 === 0) {
-      safeSend("export-progress", { count });
+      count++;
+      if (count % 100000 === 0) {
+        safeSend("export-progress", { count });
+      }
     }
+  } catch (e) {
+    // Tab closed or DB error during export — flush what we have
+    dbg("MAIN", `CSV/TSV export interrupted after ${count} rows`, { error: e.message });
   }
 
   await new Promise((resolve, reject) => {
@@ -674,33 +862,133 @@ safeHandle("export-filtered", async (event, { tabId, options }) => {
   return { count, filePath: result.filePath };
 });
 
+// Extract resident $DATA from raw MFT file
+safeHandle("extract-resident-data", async (event, { tabId }) => {
+  const meta = _tabMeta.get(tabId);
+  if (!meta || meta.sourceFormat !== "raw-mft") {
+    return { error: "This tab is not a raw MFT file" };
+  }
+  if (!fs.existsSync(meta.filePath)) {
+    return { error: `Original MFT file no longer exists: ${meta.filePath}` };
+  }
+
+  const result = await dialog.showOpenDialog(_activeWindow(), {
+    title: "Choose output folder for resident data extraction",
+    properties: ["openDirectory", "createDirectory"],
+    buttonLabel: "Extract Here",
+  });
+  if (result.canceled || !result.filePaths[0]) return { canceled: true };
+
+  const extractResult = await extractResidentData(meta.filePath, result.filePaths[0], (processed, total) => {
+    safeSend("extract-resident-progress", {
+      tabId, processed, total,
+      percent: total > 0 ? Math.round((processed / total) * 100) : 0,
+    });
+  });
+  return extractResult;
+});
+
+// Ransomware MFT Analysis
+safeHandle("analyze-ransomware", (event, { tabId, encryptedExt, ransomNotePattern, noteMatchMode, usnTabId }) => {
+  const meta = _tabMeta.get(tabId);
+  if (!meta || meta.sourceFormat !== "raw-mft") {
+    return { error: "This feature requires a raw MFT tab." };
+  }
+  let resolvedUsnTabId = null;
+  if (usnTabId) {
+    const usnMeta = _tabMeta.get(usnTabId);
+    if (usnMeta?.sourceFormat === "raw-usnjrnl") resolvedUsnTabId = usnTabId;
+  }
+  if (!resolvedUsnTabId) {
+    for (const [tid, tmeta] of _tabMeta) {
+      if (tid !== tabId && tmeta.sourceFormat === "raw-usnjrnl") {
+        resolvedUsnTabId = tid;
+        break;
+      }
+    }
+  }
+  return db.analyzeRansomware(tabId, { encryptedExt, ransomNotePattern, noteMatchMode, usnTabId: resolvedUsnTabId, progressCb: (p) => safeSend("rw-progress", p) });
+});
+
+safeHandle("scan-ransomware-extensions", (event, { tabId }) => {
+  const meta = _tabMeta.get(tabId);
+  if (!meta || meta.sourceFormat !== "raw-mft") {
+    return { error: "This feature requires a raw MFT tab." };
+  }
+  return db.scanRansomwareExtensions(tabId, (p) => safeSend("rw-progress", p));
+});
+
+// Timestomping Detector
+safeHandle("detect-timestomping", (event, { tabId }) => {
+  return db.detectTimestomping(tabId);
+});
+
+// File Activity Heatmap
+safeHandle("get-file-activity-heatmap", (event, { tabId }) => {
+  const meta = _tabMeta.get(tabId);
+  if (!meta || meta.sourceFormat !== "raw-mft") {
+    return { error: "This feature requires a raw MFT tab." };
+  }
+  return db.getFileActivityHeatmap(tabId, (p) => safeSend("hm-progress", p));
+});
+
+// ADS Analyzer
+safeHandle("analyze-ads", (event, { tabId }) => {
+  return db.analyzeADS(tabId);
+});
+
+// USN Journal Analysis
+safeHandle("analyze-usn-journal", (event, { tabId, startTime, endTime, analyses, pathFilter, mftTabId }) => {
+  return db.analyzeUsnJournal(tabId, { startTime, endTime, analyses, pathFilter, mftTabId });
+});
+
 // Save text content to file with save dialog
 safeHandle("save-text-file", async (event, { content, defaultPath, filters }) => {
-  const result = await dialog.showSaveDialog(mainWindow, { defaultPath, filters });
+  const result = await dialog.showSaveDialog(_activeWindow(), { defaultPath, filters });
   if (result.canceled) return null;
   await fsp.writeFile(result.filePath, content, "utf-8");
   return { filePath: result.filePath };
 });
 
+// Export ransomware report as PDF
+safeHandle("export-ransomware-pdf", async (event, { html, defaultName }) => {
+  const result = await dialog.showSaveDialog(_activeWindow(), {
+    defaultPath: defaultName || "ransomware_report.pdf",
+    filters: [{ name: "PDF Document", extensions: ["pdf"] }],
+  });
+  if (result.canceled) return null;
+  const win = new BrowserWindow({ show: false, width: 900, height: 1200, webPreferences: { offscreen: true } });
+  try {
+    await win.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html));
+    // Wait a moment for rendering
+    await new Promise((r) => setTimeout(r, 500));
+    const pdfBuf = await win.webContents.printToPDF({ printBackground: true, preferCSSPageSize: true, margins: { top: 0, bottom: 0, left: 0, right: 0 } });
+    await fsp.writeFile(result.filePath, pdfBuf);
+    return { filePath: result.filePath };
+  } finally {
+    win.destroy();
+  }
+});
+
 // Generate HTML report from bookmarked/tagged events
-safeHandle("generate-report", async (event, { tabId, fileName, tagColors }) => {
+safeHandle("generate-report", async (event, { tabId, fileName, tagColors, vtEnrichment }) => {
   const reportData = db.getReportData(tabId);
   if (!reportData) return { error: "No data available" };
 
-  const result = await dialog.showSaveDialog(mainWindow, {
+  const result = await dialog.showSaveDialog(_activeWindow(), {
     defaultPath: `${fileName.replace(/\.[^.]+$/, "")}_report.html`,
     filters: [{ name: "HTML Report", extensions: ["html"] }],
   });
   if (result.canceled) return null;
 
-  const html = buildReportHtml(reportData, fileName, tagColors);
+  const html = buildReportHtml(reportData, fileName, tagColors, vtEnrichment);
   await fsp.writeFile(result.filePath, html, "utf-8");
   return { filePath: result.filePath };
 });
 
-// Sheet selection response (for multi-sheet XLSX)
+// Sheet selection response (for multi-sheet XLSX) — route through queue
 safeHandle("select-sheet", (event, { filePath, tabId, fileName, sheetName }) => {
-  startImport(filePath, tabId, fileName, sheetName);
+  enqueueImport(filePath, { tabId, sheetName, skipRecent: true });
 });
 
 // Get tab info
@@ -743,8 +1031,24 @@ safeHandle("get-process-tree", (event, { tabId, options }) => {
   return db.getProcessTree(tabId, options);
 });
 
+safeHandle("preview-process-tree", (event, { tabId, options }) => {
+  return db.previewProcessTree(tabId, options);
+});
+
+safeHandle("get-process-inspector-context", (event, { tabId, options }) => {
+  return db.getProcessInspectorContext(tabId, options);
+});
+
+safeHandle("preview-lateral-movement", (event, { tabId, options }) => {
+  return db.previewLateralMovement(tabId, options);
+});
+
 safeHandle("get-lateral-movement", (event, { tabId, options }) => {
   return db.getLateralMovement(tabId, options);
+});
+
+safeHandle("preview-persistence-analysis", (event, { tabId, options }) => {
+  return db.previewPersistenceAnalysis(tabId, options);
 });
 
 safeHandle("get-persistence-analysis", (event, { tabId, options }) => {
@@ -804,6 +1108,18 @@ safeHandle("merge-tabs", async (event, { mergedTabId, sources }) => {
       emptyColumns,
     });
 
+    // Build indexes + FTS (same as normal import flow)
+    db.buildIndexesAsync(mergedTabId, (progress) => {
+      safeSend("index-progress", { tabId: mergedTabId, ...progress });
+    }).then(() => {
+      return db.buildFtsAsync(mergedTabId, (progress) => {
+        safeSend("fts-progress", { tabId: mergedTabId, ...progress });
+      });
+    }).catch((err2) => {
+      console.error(`Index/FTS build failed for merged tab ${mergedTabId}:`, err2?.message || err2);
+      safeSend("fts-progress", { tabId: mergedTabId, indexed: 0, total: 0, done: true, error: err2?.message });
+    });
+
     return { success: true, rowCount: result.rowCount };
   } catch (err) {
     try { db.closeTab(mergedTabId); } catch (_) {}
@@ -818,7 +1134,7 @@ safeHandle("merge-tabs", async (event, { mergedTabId, sources }) => {
 
 // Session save
 safeHandle("save-session", async (event, { sessionData }) => {
-  const result = await dialog.showSaveDialog(mainWindow, {
+  const result = await dialog.showSaveDialog(_activeWindow(), {
     defaultPath: "session.tle",
     filters: [{ name: "TLE Session", extensions: ["tle"] }],
   });
@@ -829,7 +1145,7 @@ safeHandle("save-session", async (event, { sessionData }) => {
 
 // Session load
 safeHandle("load-session", async () => {
-  const result = await dialog.showOpenDialog(mainWindow, {
+  const result = await dialog.showOpenDialog(_activeWindow(), {
     properties: ["openFile"],
     filters: [{ name: "TLE Session", extensions: ["tle"] }],
   });
@@ -853,12 +1169,13 @@ safeHandle("import-file-for-restore", async (event, { filePath, sheetName }) => 
   if (!fs.existsSync(filePath)) return { error: `File not found: ${filePath}` };
   const tabId = `tab_${++tabCounter}_${Date.now()}`;
   let fileName; try { fileName = decodeURIComponent(path.basename(filePath)); } catch { fileName = path.basename(filePath); }
-  startImport(filePath, tabId, fileName, sheetName || undefined);
+  enqueueImport(filePath, { tabId, sheetName: sheetName || undefined, skipRecent: true });
   return { tabId, fileName };
 });
 
 // ── Filter Presets (persistent storage) ─────────────────────────────
 const presetsPath = path.join(app.getPath("userData"), "filter-presets.json");
+const piAnalystProfilePath = path.join(app.getPath("userData"), "process-inspector-profile.json");
 
 safeHandle("load-filter-presets", () => {
   try { return JSON.parse(fs.readFileSync(presetsPath, "utf-8")); }
@@ -868,6 +1185,440 @@ safeHandle("load-filter-presets", () => {
 safeHandle("save-filter-presets", async (event, { presets }) => {
   await fsp.writeFile(presetsPath, JSON.stringify(presets, null, 2));
   return true;
+});
+
+safeHandle("load-pi-analyst-profile", () => {
+  try {
+    const raw = JSON.parse(fs.readFileSync(piAnalystProfilePath, "utf-8"));
+    return {
+      version: 1,
+      suppressions: Array.isArray(raw?.suppressions) ? raw.suppressions : [],
+      baselines: Array.isArray(raw?.baselines) ? raw.baselines : [],
+      updatedAt: raw?.updatedAt || null,
+    };
+  } catch {
+    return { version: 1, suppressions: [], baselines: [], updatedAt: null };
+  }
+});
+
+safeHandle("save-pi-analyst-profile", async (event, { profile }) => {
+  const next = {
+    version: 1,
+    suppressions: Array.isArray(profile?.suppressions) ? profile.suppressions : [],
+    baselines: Array.isArray(profile?.baselines) ? profile.baselines : [],
+    updatedAt: new Date().toISOString(),
+  };
+  await fsp.writeFile(piAnalystProfilePath, JSON.stringify(next, null, 2));
+  return next;
+});
+
+// ── VirusTotal API Integration ──────────────────────────────────────
+const _vtSettingsPath = path.join(app.getPath("userData"), "vt-settings.json");
+
+function _loadVtSettings() {
+  try {
+    if (fs.existsSync(_vtSettingsPath)) return JSON.parse(fs.readFileSync(_vtSettingsPath, "utf8"));
+  } catch {}
+  return { apiKey: "", rateLimit: 4, cacheTtlHours: 24 };
+}
+
+function _saveVtSettings(settings) {
+  try { fs.writeFileSync(_vtSettingsPath, JSON.stringify(settings), "utf8"); } catch {}
+}
+
+safeHandle("vt-set-api-key", async (event, { apiKey, rateLimit, cacheTtlHours }) => {
+  const settings = _loadVtSettings();
+  if (apiKey !== undefined) settings.apiKey = apiKey;
+  if (rateLimit !== undefined) settings.rateLimit = rateLimit;
+  if (cacheTtlHours !== undefined) settings.cacheTtlHours = cacheTtlHours;
+  _saveVtSettings(settings);
+  return true;
+});
+
+safeHandle("vt-get-api-key", async () => {
+  const s = _loadVtSettings();
+  const hasKey = !!(s.apiKey && s.apiKey.length > 0);
+  const maskedKey = hasKey ? s.apiKey.slice(0, 4) + "..." + s.apiKey.slice(-4) : "";
+  return { hasKey, maskedKey, rateLimit: s.rateLimit || 4, cacheTtlHours: s.cacheTtlHours || 24 };
+});
+
+safeHandle("vt-clear-api-key", async () => {
+  const settings = _loadVtSettings();
+  settings.apiKey = "";
+  _saveVtSettings(settings);
+  return true;
+});
+
+// VT cache — persistent SQLite DB
+let _vtCacheDb = null;
+function _openVtCache() {
+  if (_vtCacheDb) return _vtCacheDb;
+  const Database = require("better-sqlite3");
+  const cachePath = path.join(app.getPath("userData"), "vt-cache.db");
+  _vtCacheDb = new Database(cachePath);
+  _vtCacheDb.pragma("journal_mode = WAL");
+  _vtCacheDb.exec(`CREATE TABLE IF NOT EXISTS vt_cache (
+    ioc TEXT PRIMARY KEY,
+    category TEXT,
+    vt_response TEXT,
+    fetched_at INTEGER,
+    score TEXT
+  )`);
+  return _vtCacheDb;
+}
+
+// Normalize IOC for cache key — avoid duplicate entries for equivalent IOCs
+function _vtCacheKey(ioc, category) {
+  if (/^(SHA256|SHA1|MD5)_Hash$/.test(category)) return ioc.toLowerCase();
+  if (category === "Domain_Name") return ioc.toLowerCase();
+  if (/^IPv[46]_Address(:Port)?$/.test(category)) return ioc.replace(/:\d+$/, "").replace(/^\[|\]$/g, "");
+  if (category === "URL") return ioc.toLowerCase();
+  return ioc;
+}
+
+function _vtCacheLookup(ioc, category, ttlHours) {
+  const cache = _openVtCache();
+  const key = _vtCacheKey(ioc, category);
+  const row = cache.prepare("SELECT * FROM vt_cache WHERE ioc = ?").get(key);
+  if (!row) return null;
+  const ageMs = Date.now() - row.fetched_at;
+  if (ageMs > ttlHours * 3600 * 1000) return null;
+  try { return JSON.parse(row.vt_response); } catch { return null; }
+}
+
+function _vtCacheStore(ioc, category, result) {
+  const cache = _openVtCache();
+  const key = _vtCacheKey(ioc, category);
+  cache.prepare("INSERT OR REPLACE INTO vt_cache (ioc, category, vt_response, fetched_at, score) VALUES (?, ?, ?, ?, ?)")
+    .run(key, category, JSON.stringify(result), Date.now(), result.score || "");
+}
+
+// Private IP detection
+function _isPrivateIp(ip) {
+  const clean = ip.replace(/:\d+$/, "").replace(/^\[|\]$/g, "");
+  if (/^10\./.test(clean)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(clean)) return true;
+  if (/^192\.168\./.test(clean)) return true;
+  if (/^127\./.test(clean)) return true;
+  if (clean === "::1" || clean === "0:0:0:0:0:0:0:1") return true;
+  return false;
+}
+
+// VT API request
+function _vtApiRequest(endpoint, apiKey) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: "www.virustotal.com",
+      path: `/api/v3/${endpoint}`,
+      method: "GET",
+      headers: { "x-apikey": apiKey, "Accept": "application/json" },
+    };
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => { data += chunk; });
+      res.on("end", () => {
+        resolve({ statusCode: res.statusCode, headers: res.headers, body: data });
+      });
+    });
+    req.on("error", (err) => reject(err));
+    req.setTimeout(30000, () => { req.destroy(); reject(new Error("Request timeout")); });
+    req.end();
+  });
+}
+
+// Map IOC category to VT endpoint
+function _vtEndpoint(ioc, category) {
+  if (/^(SHA256|SHA1|MD5)_Hash$/.test(category)) return `files/${ioc}`;
+  if (category === "Domain_Name") return `domains/${ioc}`;
+  if (/^IPv[46]_Address(:Port)?$/.test(category)) {
+    const clean = ioc.replace(/:\d+$/, "").replace(/^\[|\]$/g, "");
+    return `ip_addresses/${clean}`;
+  }
+  if (category === "URL") {
+    const id = Buffer.from(ioc).toString("base64url");
+    return `urls/${id}`;
+  }
+  return null;
+}
+
+// VT URL for browser
+function _vtUrl(ioc, category) {
+  if (/^(SHA256|SHA1|MD5)_Hash$/.test(category)) return `https://www.virustotal.com/gui/file/${ioc}`;
+  if (category === "Domain_Name") return `https://www.virustotal.com/gui/domain/${ioc}`;
+  if (/^IPv[46]_Address(:Port)?$/.test(category)) {
+    const clean = ioc.replace(/:\d+$/, "").replace(/^\[|\]$/g, "");
+    return `https://www.virustotal.com/gui/ip-address/${clean}`;
+  }
+  if (category === "URL") {
+    const crypto = require("crypto");
+    const sha256 = crypto.createHash("sha256").update(ioc).digest("hex");
+    return `https://www.virustotal.com/gui/url/${sha256}`;
+  }
+  return null;
+}
+
+function _parseVtResponse(ioc, category, statusCode, body) {
+  const vtUrl = _vtUrl(ioc, category);
+  const queriedAt = Date.now();
+  if (statusCode === 404) {
+    return { ioc, found: false, malicious: 0, suspicious: 0, harmless: 0, undetected: 0, total: 0, score: "Not Found", verdict: "not_found", vtUrl, error: null, queriedAt };
+  }
+  if (statusCode === 401) {
+    return { ioc, found: false, score: "", verdict: "error", vtUrl, error: "Invalid API key", queriedAt };
+  }
+  if (statusCode === 429) {
+    return { ioc, found: false, score: "", verdict: "error", vtUrl, error: "Rate limited (429)", queriedAt };
+  }
+  if (statusCode < 200 || statusCode >= 300) {
+    return { ioc, found: false, score: "", verdict: "error", vtUrl, error: `HTTP ${statusCode}`, queriedAt };
+  }
+  try {
+    const json = JSON.parse(body);
+    const attrs = json?.data?.attributes || {};
+    const stats = attrs.last_analysis_stats || {};
+    const malicious = stats.malicious || 0;
+    const suspicious = stats.suspicious || 0;
+    const harmless = stats.harmless || 0;
+    const undetected = stats.undetected || 0;
+    const total = malicious + suspicious + harmless + undetected + (stats.timeout || 0);
+    const detected = malicious + suspicious;
+    const score = `${detected}/${total}`;
+    const verdict = total === 0 ? "not_found" : malicious > 0 ? "malicious" : suspicious > 0 ? "suspicious" : "clean";
+    const threatLabel = attrs.popular_threat_classification?.suggested_threat_label || null;
+    return { ioc, found: total > 0, malicious, suspicious, harmless, undetected, total, score, verdict, vtUrl, error: null, threatLabel, queriedAt };
+  } catch {
+    return { ioc, found: false, score: "", verdict: "error", vtUrl, error: "Failed to parse response", queriedAt };
+  }
+}
+
+// Rate limiter — token bucket
+const _vtRequestTimes = [];
+
+async function _vtRateLimitWait(rateLimit) {
+  const windowMs = 60000;
+  while (true) {
+    const now = Date.now();
+    // Remove timestamps older than window
+    while (_vtRequestTimes.length > 0 && now - _vtRequestTimes[0] > windowMs) _vtRequestTimes.shift();
+    if (_vtRequestTimes.length < rateLimit) {
+      _vtRequestTimes.push(now);
+      return;
+    }
+    const waitUntil = _vtRequestTimes[0] + windowMs;
+    const waitMs = waitUntil - now + 50;
+    await new Promise((r) => setTimeout(r, waitMs));
+  }
+}
+
+// Single IOC lookup
+safeHandle("vt-lookup-single", async (event, { ioc, category }) => {
+  const settings = _loadVtSettings();
+  if (!settings.apiKey) return { ioc, error: "No API key configured" };
+
+  const endpoint = _vtEndpoint(ioc, category);
+  if (!endpoint) return { ioc, score: "N/A", verdict: "unsupported", error: null };
+
+  if (/^IPv[46]_Address(:Port)?$/.test(category) && _isPrivateIp(ioc)) {
+    return { ioc, found: false, score: "Private IP", verdict: "private", vtUrl: null, error: null };
+  }
+
+  // Check cache
+  const cached = _vtCacheLookup(ioc, category, settings.cacheTtlHours || 24);
+  if (cached) return cached;
+
+  // API call
+  await _vtRateLimitWait(settings.rateLimit || 4);
+  try {
+    const res = await _vtApiRequest(endpoint, settings.apiKey);
+    if (res.statusCode === 429) {
+      const retryAfter = parseInt(res.headers["retry-after"] || "60", 10);
+      await new Promise((r) => setTimeout(r, retryAfter * 1000));
+      const res2 = await _vtApiRequest(endpoint, settings.apiKey);
+      const result = _parseVtResponse(ioc, category, res2.statusCode, res2.body);
+      if (!result.error || res2.statusCode === 404) _vtCacheStore(ioc, category, result);
+      return result;
+    }
+    const result = _parseVtResponse(ioc, category, res.statusCode, res.body);
+    if (!result.error || res.statusCode === 404) _vtCacheStore(ioc, category, result);
+    return result;
+  } catch (err) {
+    return { ioc, error: err.message, score: "", verdict: "error" };
+  }
+});
+
+// Bulk lookup — runs in background with progress events
+const _vtBulkJobs = new Map();
+let _vtBulkIdCounter = 0;
+
+safeHandle("vt-bulk-lookup", async (event, { iocs, requestId: clientId }) => {
+  const settings = _loadVtSettings();
+  if (!settings.apiKey) return { error: "No API key configured" };
+
+  const requestId = clientId || `vt-bulk-${++_vtBulkIdCounter}`;
+  const job = { cancelled: false };
+  _vtBulkJobs.set(requestId, job);
+
+  // Run in background
+  (async () => {
+    const total = iocs.length;
+    let completed = 0;
+    // Track normalized keys already looked up in this batch to avoid duplicate API calls
+    // (e.g., 1.2.3.4:80 and 1.2.3.4:443 resolve to the same VT object)
+    const seenKeys = new Map(); // normalized key → result
+
+    for (const { raw, category } of iocs) {
+      if (job.cancelled || (mainWindow && mainWindow.isDestroyed())) break;
+
+      const endpoint = _vtEndpoint(raw, category);
+      let result;
+
+      // Deduplicate: if a normalized-equivalent IOC was already looked up in this batch, reuse its result
+      const normKey = _vtCacheKey(raw, category);
+      if (seenKeys.has(normKey)) {
+        result = { ...seenKeys.get(normKey), ioc: raw };
+        completed++;
+        safeSend("vt-progress", { requestId, completed, total, result });
+        continue;
+      }
+
+      if (!endpoint) {
+        result = { ioc: raw, score: "N/A", verdict: "unsupported", error: null };
+      } else if (/^IPv[46]_Address(:Port)?$/.test(category) && _isPrivateIp(raw)) {
+        result = { ioc: raw, found: false, score: "Private IP", verdict: "private", vtUrl: null, error: null };
+      } else {
+        // Check cache
+        const cached = _vtCacheLookup(raw, category, settings.cacheTtlHours || 24);
+        if (cached) {
+          result = cached;
+        } else {
+          // API call
+          try {
+            await _vtRateLimitWait(settings.rateLimit || 4);
+            if (job.cancelled) break;
+            const res = await _vtApiRequest(endpoint, settings.apiKey);
+            if (res.statusCode === 401) {
+              safeSend("vt-progress", { requestId, completed, total, result: { ioc: raw, error: "Invalid API key", verdict: "error" } });
+              safeSend("vt-complete", { requestId, completed, total, error: "Invalid API key" });
+              _vtBulkJobs.delete(requestId);
+              return;
+            }
+            if (res.statusCode === 429) {
+              const retryAfter = parseInt(res.headers["retry-after"] || "60", 10);
+              // Cancellable sleep — check every 2s instead of blocking for full duration
+              const sleepEnd = Date.now() + retryAfter * 1000;
+              while (Date.now() < sleepEnd && !job.cancelled) {
+                await new Promise((r) => setTimeout(r, Math.min(2000, sleepEnd - Date.now())));
+              }
+              if (job.cancelled) break;
+              const res2 = await _vtApiRequest(endpoint, settings.apiKey);
+              result = _parseVtResponse(raw, category, res2.statusCode, res2.body);
+              if (!result.error || res2.statusCode === 404) _vtCacheStore(raw, category, result);
+            } else {
+              result = _parseVtResponse(raw, category, res.statusCode, res.body);
+              if (!result.error || res.statusCode === 404) _vtCacheStore(raw, category, result);
+            }
+          } catch (err) {
+            result = { ioc: raw, error: err.message, score: "", verdict: "error" };
+          }
+        }
+      }
+
+      if (!result.error) seenKeys.set(normKey, result);
+      completed++;
+      safeSend("vt-progress", { requestId, completed, total, result });
+    }
+
+    safeSend("vt-complete", { requestId, completed, total, cancelled: job.cancelled });
+    _vtBulkJobs.delete(requestId);
+  })().catch((err) => {
+    console.error(`VT bulk lookup failed for ${requestId}:`, err?.message || err);
+    safeSend("vt-complete", { requestId, completed: 0, total: iocs.length, error: err?.message || "Unknown error" });
+    _vtBulkJobs.delete(requestId);
+  });
+
+  return { requestId };
+});
+
+safeHandle("vt-cancel", async (event, { requestId }) => {
+  const job = _vtBulkJobs.get(requestId);
+  if (job) job.cancelled = true;
+  return true;
+});
+
+safeHandle("vt-clear-cache", async () => {
+  const cache = _openVtCache();
+  const info = cache.prepare("DELETE FROM vt_cache").run();
+  return { cleared: info.changes };
+});
+
+// VT relationships — pivot from one IOC to related artifacts
+safeHandle("vt-get-related", async (event, { ioc, category }) => {
+  const settings = _loadVtSettings();
+  if (!settings.apiKey) return { error: "No API key configured" };
+
+  // Build relationship endpoints per IOC type
+  const rels = [];
+  if (/^(SHA256|SHA1|MD5)_Hash$/.test(category)) {
+    rels.push({ type: "Contacted Domains", endpoint: `files/${ioc}/contacted_domains` });
+    rels.push({ type: "Contacted IPs", endpoint: `files/${ioc}/contacted_ips` });
+    rels.push({ type: "Contacted URLs", endpoint: `files/${ioc}/contacted_urls` });
+  } else if (category === "Domain_Name") {
+    rels.push({ type: "Communicating Files", endpoint: `domains/${ioc}/communicating_files` });
+    rels.push({ type: "DNS Resolutions", endpoint: `domains/${ioc}/resolutions` });
+  } else if (/^IPv[46]_Address(:Port)?$/.test(category)) {
+    const clean = ioc.replace(/:\d+$/, "").replace(/^\[|\]$/g, "");
+    rels.push({ type: "Communicating Files", endpoint: `ip_addresses/${clean}/communicating_files` });
+    rels.push({ type: "DNS Resolutions", endpoint: `ip_addresses/${clean}/resolutions` });
+  } else if (category === "URL") {
+    const id = Buffer.from(ioc).toString("base64url");
+    rels.push({ type: "Contacted Domains", endpoint: `urls/${id}/contacted_domains` });
+    rels.push({ type: "Contacted IPs", endpoint: `urls/${id}/contacted_ips` });
+  } else {
+    return { error: "Unsupported IOC type for relationships" };
+  }
+
+  const results = [];
+  const errors = [];
+  for (const rel of rels) {
+    try {
+      await _vtRateLimitWait(settings.rateLimit || 4);
+      let res = await _vtApiRequest(`${rel.endpoint}?limit=10`, settings.apiKey);
+      // Retry once on 429
+      if (res.statusCode === 429) {
+        const retryAfter = parseInt(res.headers["retry-after"] || "60", 10);
+        await new Promise((r) => setTimeout(r, retryAfter * 1000));
+        res = await _vtApiRequest(`${rel.endpoint}?limit=10`, settings.apiKey);
+      }
+      if (res.statusCode === 401) {
+        return { ioc, relationships: [], error: "Invalid API key" };
+      }
+      if (res.statusCode === 200) {
+        const json = JSON.parse(res.body);
+        const items = (json.data || []).map((item) => {
+          const attrs = item.attributes || {};
+          if (item.type === "file") {
+            const stats = attrs.last_analysis_stats || {};
+            return { id: item.id, type: "file", name: attrs.meaningful_name || attrs.name || item.id, score: `${(stats.malicious || 0) + (stats.suspicious || 0)}/${(stats.malicious || 0) + (stats.suspicious || 0) + (stats.harmless || 0) + (stats.undetected || 0)}`, malicious: stats.malicious || 0, threatLabel: attrs.popular_threat_classification?.suggested_threat_label || null };
+          } else if (item.type === "domain") {
+            return { id: item.id, type: "domain", name: item.id };
+          } else if (item.type === "ip_address") {
+            return { id: item.id, type: "ip", name: item.id };
+          } else if (item.type === "url") {
+            return { id: item.id, type: "url", name: attrs.url || item.id };
+          } else if (item.type === "resolution") {
+            return { id: attrs.ip_address || attrs.host_name || item.id, type: "resolution", name: attrs.ip_address || attrs.host_name || item.id, date: attrs.date };
+          }
+          return { id: item.id, type: item.type, name: item.id };
+        });
+        if (items.length > 0) results.push({ type: rel.type, items });
+      } else if (res.statusCode !== 404) {
+        errors.push(`${rel.type}: HTTP ${res.statusCode}`);
+      }
+    } catch (err) {
+      errors.push(`${rel.type}: ${err.message || "Network error"}`);
+    }
+  }
+  return { ioc, relationships: results, error: errors.length > 0 ? errors.join("; ") : undefined };
 });
 
 // ── Native macOS Menu ──────────────────────────────────────────────
@@ -881,7 +1632,17 @@ function buildMenu() {
         ...recentFiles.map((fp) => ({
           label: path.basename(fp),
           toolTip: fp,
-          click: () => { if (fs.existsSync(fp)) enqueueImport(fp); },
+          click: () => {
+            if (fs.existsSync(fp)) {
+              enqueueImport(fp);
+            } else {
+              const files = _loadRecentFiles().filter((f) => f !== fp);
+              _saveRecentFiles(files);
+              _rebuildMenu();
+              safeSend("recent-files-updated", files);
+              dialog.showMessageBox(_activeWindow(), { type: "warning", title: "File Not Found", message: `The file no longer exists at this location.`, detail: fp, buttons: ["OK"] }).catch(() => {});
+            }
+          },
         })),
         { type: "separator" },
         { label: "Clear Recent", click: () => { _saveRecentFiles([]); _rebuildMenu(); } },
@@ -1031,6 +1792,11 @@ function buildMenu() {
             { label: "Light", click: () => mainWindow?.webContents.send("set-theme", "light") },
           ],
         },
+        { type: "separator" },
+        {
+          label: "VirusTotal API Key...",
+          click: () => mainWindow?.webContents.send("trigger-vt-settings"),
+        },
       ],
     },
     {
@@ -1071,6 +1837,13 @@ function buildMenu() {
           accelerator: "CmdOrCtrl+/",
           click: () => mainWindow?.webContents.send("trigger-shortcuts"),
         },
+        {
+          label: "Check for Updates...",
+          click: () => {
+            if (_activeWindow()) safeSend("trigger-check-for-updates");
+            else updateController.checkForUpdates();
+          },
+        },
         { type: "separator" },
         {
           label: "EZ Tools Website",
@@ -1083,7 +1856,7 @@ function buildMenu() {
 }
 
 // ── HTML Report Builder ──────────────────────────────────────────
-function buildReportHtml(data, fileName, tagColors = {}) {
+function buildReportHtml(data, fileName, tagColors = {}, vtEnrichment = null) {
   const esc = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const now = new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC";
 
@@ -1145,6 +1918,67 @@ function buildReportHtml(data, fileName, tagColors = {}) {
       body += `<span class="tag-chip" style="border-color:${color};color:${color};background:${color}22">${esc(tag)} <strong>${cnt}</strong></span>`;
     }
     body += "</div></div>";
+  }
+
+  // VirusTotal IOC Enrichment summary
+  if (vtEnrichment && vtEnrichment.perIocResults && vtEnrichment.results) {
+    const vtr = vtEnrichment.results;
+    const perIoc = vtEnrichment.perIocResults;
+    const vtIocs = perIoc.filter((ioc) => vtr[ioc.raw]);
+    // Split into timeline-matched vs feed-only IOCs
+    const vtMatched = vtIocs.filter((ioc) => ioc.hits > 0);
+    const vtFeedOnly = vtIocs.filter((ioc) => ioc.hits === 0);
+    const malicious = vtMatched.filter((ioc) => vtr[ioc.raw]?.verdict === "malicious");
+    const suspicious = vtMatched.filter((ioc) => vtr[ioc.raw]?.verdict === "suspicious");
+    const clean = vtMatched.filter((ioc) => vtr[ioc.raw]?.verdict === "clean");
+    const notFound = vtMatched.filter((ioc) => vtr[ioc.raw]?.verdict === "not_found" || vtr[ioc.raw]?.verdict === "private");
+    const feedMal = vtFeedOnly.filter((ioc) => vtr[ioc.raw]?.verdict === "malicious").length;
+    const feedSus = vtFeedOnly.filter((ioc) => vtr[ioc.raw]?.verdict === "suspicious").length;
+    const feedClean = vtFeedOnly.filter((ioc) => vtr[ioc.raw]?.verdict === "clean").length;
+
+    body += '<div class="section"><h2>VirusTotal IOC Enrichment</h2>';
+
+    // Verdict summary cards (scoped to timeline-matched IOCs)
+    body += '<div class="cards">';
+    body += `<div class="card" style="border-color:#f85149"><div class="card-val" style="color:#f85149">${malicious.length}</div><div class="card-label">Malicious</div></div>`;
+    body += `<div class="card" style="border-color:#d29922"><div class="card-val" style="color:#d29922">${suspicious.length}</div><div class="card-label">Suspicious</div></div>`;
+    body += `<div class="card" style="border-color:#3fb950"><div class="card-val" style="color:#3fb950">${clean.length}</div><div class="card-label">Clean</div></div>`;
+    body += `<div class="card"><div class="card-val">${notFound.length}</div><div class="card-label">Not Found</div></div>`;
+    body += '</div>';
+    if (feedMal + feedSus + feedClean > 0) {
+      const parts = [];
+      if (feedMal > 0) parts.push(`<span style="color:#f85149">${feedMal} malicious</span>`);
+      if (feedSus > 0) parts.push(`<span style="color:#d29922">${feedSus} suspicious</span>`);
+      if (feedClean > 0) parts.push(`<span style="color:#3fb950">${feedClean} clean</span>`);
+      body += `<div style="text-align:center;font-size:11px;color:#8b949e;margin-top:4px">Feed only: ${parts.join(" · ")} <span style="opacity:0.7">(no timeline hits)</span></div>`;
+    }
+
+    // IOC details table (only VT-enriched IOCs)
+    if (vtIocs.length > 0) {
+      // Sort: malicious first, then suspicious, then clean, then not found
+      const verdictOrder = { malicious: 0, suspicious: 1, clean: 2, not_found: 3, private: 3 };
+      const sorted = [...vtIocs].sort((a, b) => (verdictOrder[vtr[a.raw]?.verdict] ?? 4) - (verdictOrder[vtr[b.raw]?.verdict] ?? 4));
+
+      body += '<div class="table-wrap"><table><thead><tr>';
+      body += '<th>IOC</th><th>Category</th><th>VT Score</th><th>Verdict</th><th>Threat</th><th>Queried At</th><th>Timeline Hits</th>';
+      body += '</tr></thead><tbody>';
+      for (const ioc of sorted) {
+        const r = vtr[ioc.raw];
+        const verdict = r?.verdict || "unknown";
+        const verdictColor = verdict === "malicious" ? "#f85149" : verdict === "suspicious" ? "#d29922" : verdict === "clean" ? "#3fb950" : "#8b949e";
+        body += '<tr>';
+        body += `<td style="font-family:monospace;font-size:12px">${esc(ioc.raw)}</td>`;
+        body += `<td>${esc(ioc.category.replace(/_/g, " "))}</td>`;
+        body += `<td style="font-family:monospace"><span style="color:${verdictColor};font-weight:700">${esc(r?.score || "—")}</span></td>`;
+        body += `<td><span style="background:${verdictColor}22;color:${verdictColor};border:1px solid ${verdictColor}66;padding:1px 8px;border-radius:3px;font-size:11px;font-weight:600">${esc(verdict)}</span></td>`;
+        body += `<td style="font-size:11px;color:${verdictColor};font-style:italic">${r?.threatLabel ? esc(r.threatLabel) : "—"}</td>`;
+        body += `<td style="font-size:11px;font-family:monospace;color:#8b949e;white-space:nowrap">${r?.queriedAt ? new Date(r.queriedAt).toISOString().replace("T", " ").slice(0, 19) + "Z" : "—"}</td>`;
+        body += `<td style="text-align:right;font-family:monospace">${ioc.hits > 0 ? ioc.hits.toLocaleString() : "—"}</td>`;
+        body += '</tr>';
+      }
+      body += '</tbody></table></div>';
+    }
+    body += '</div>';
   }
 
   // Bookmarked events table

@@ -205,11 +205,13 @@ Right-click any cell and select **Lookup on VirusTotal** to query a single indic
 
 ### Bulk Lookup
 
-After an IOC scan, click **Enrich N IOCs with VirusTotal** to look up all matched indicators in batch. Progress is reported via IPC as each IOC is processed. A **Cancel** button is available to stop in-flight lookups.
+After an IOC scan, click **Enrich N IOCs with VirusTotal** to look up all VT-compatible indicators that matched timeline rows. By default, only IOCs with timeline hits are enriched to conserve API quota. Enable **Include unmatched IOCs** to enrich all compatible indicators regardless of hit count.
+
+Progress is shown inline as each IOC is processed. A **Cancel** button stops in-flight lookups. Equivalent IOCs (e.g., `1.2.3.4:80` and `1.2.3.4:443`) are deduplicated so only one API call is made per unique object.
 
 ### Persistent Cache
 
-Results are cached in a local SQLite database (`vt-cache.db`) to avoid redundant API calls. The cache stores the IOC value, category, full VT response, fetch timestamp, and detection score. Cached results are returned instantly on subsequent lookups until the configured TTL expires.
+Results are cached in a local SQLite database (`vt-cache.db`) to avoid redundant API calls. The cache key normalizes hashes to lowercase, domains to lowercase, and strips ports from IP:Port values. Cached results are returned instantly on subsequent lookups until the configured TTL expires.
 
 ### Verdict Badges
 
@@ -221,11 +223,13 @@ After enrichment, a **VT** column appears in the data grid showing color-coded v
 | **Suspicious** | Yellow | Flagged as suspicious by some engines |
 | **Clean** | Green | No detections |
 
-The VT column supports sorting and filtering — use the dropdown to filter by verdict.
+Click a badge to open the indicator's VirusTotal page. Hover to see all matched IOCs and their individual verdicts.
+
+The VT column supports sorting (malicious first) and filtering — use the column dropdown to filter by verdict.
 
 ### Auto-Tagging
 
-Enriched rows are automatically tagged with their VT verdict (`malicious`, `suspicious`, or `clean`) for immediate filtering and reporting.
+After enrichment completes, rows are automatically tagged with their VT verdict (`VT: Malicious`, `VT: Suspicious`, or `VT: Clean`). This enables immediate filtering via the VT column dropdown and ensures sort-by-verdict works without manual steps. The **Tag by Verdict** button is still available for manual re-tagging.
 
 ## See Also
 

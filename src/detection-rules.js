@@ -356,11 +356,14 @@ const CHAIN_RULES = [
 ];
 
 // Build lookup map keyed by "parent:child" (sans .exe), highest severity wins for duplicates
+// Technique IDs extracted from reason text at build time (first-class, no regex fallback needed)
 export const CHAIN_RULE_MAP = new Map();
 for (const [p, c, sev, desc] of CHAIN_RULES) {
   const key = p.replace(/\.exe$/i, "") + ":" + c.replace(/\.exe$/i, "");
+  const techniques = desc.match(/\bT\d{4}(?:\.\d{3})?\b/g) || [];
+  const reason = desc.replace(/\s*\[T\d{4}(?:\.\d{3})?]/g, "").trim();
   const ex = CHAIN_RULE_MAP.get(key);
-  if (!ex || sev > ex.level) CHAIN_RULE_MAP.set(key, { level: sev, reason: desc });
+  if (!ex || sev > ex.level) CHAIN_RULE_MAP.set(key, { level: sev, reason, techniques });
 }
 
 // Standalone detection patterns — command-line, path, and process-name based (not parent→child)
