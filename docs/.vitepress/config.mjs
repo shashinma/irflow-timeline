@@ -58,7 +58,7 @@ export default defineConfig({
       { text: 'Reference', link: '/reference/keyboard-shortcuts' },
       { text: 'Author', link: '/about/author' },
       {
-        text: 'v1.0.3-beta',
+        text: 'v1.0.4-beta',
         items: [
           { text: 'Changelog', link: '/about/changelog' },
           { text: 'Roadmap', link: '/about/roadmap' },
@@ -86,6 +86,7 @@ export default defineConfig({
           items: [
             { text: 'Virtual Grid', link: '/features/virtual-grid' },
             { text: 'Search & Filtering', link: '/features/search-filtering' },
+            { text: 'Filter Presets', link: '/features/filter-presets' },
             { text: 'Bookmarks & Tags', link: '/features/bookmarks-tags' },
             { text: 'Color Rules', link: '/features/color-rules' }
           ]
@@ -95,10 +96,12 @@ export default defineConfig({
           items: [
             { text: 'Histogram', link: '/features/histogram' },
             { text: 'Process Inspector', link: '/features/process-tree' },
+            { text: 'Analyst Profiles', link: '/features/analyst-profiles' },
             { text: 'Lateral Movement Tracker', link: '/features/lateral-movement' },
             { text: 'Persistence Analyzer', link: '/features/persistence-analyzer' },
             { text: 'Gap & Burst Analysis', link: '/features/gap-burst-analysis' },
             { text: 'IOC Matching', link: '/features/ioc-matching' },
+            { text: 'VirusTotal Integration', link: '/features/virustotal' },
             { text: 'NTFS Analysis', link: '/features/ntfs-analysis' },
             { text: 'Stacking', link: '/features/stacking' },
             { text: 'Log Source Coverage', link: '/features/log-source-coverage' }
@@ -123,6 +126,7 @@ export default defineConfig({
           items: [
             { text: 'Keyboard Shortcuts', link: '/reference/keyboard-shortcuts' },
             { text: 'KAPE Profiles', link: '/reference/kape-profiles' },
+            { text: 'Preferences', link: '/reference/preferences' },
             { text: 'Performance Tips', link: '/reference/performance-tips' },
             { text: 'FAQ & Troubleshooting', link: '/reference/faq' }
           ]
