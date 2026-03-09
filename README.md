@@ -70,6 +70,7 @@ Inspired by [Eric Zimmerman's Timeline Explorer](https://ericzimmerman.github.io
 - [log2timeline/Plaso](https://github.com/log2timeline/plaso) -- Super timeline generation framework by Kristinn Gudjonsson and contributors
 - [SANS DFIR](https://www.sans.org/digital-forensics-incident-response/) -- DFIR training and community resources
 - [The DFIR Report](https://thedfirreport.com/) -- Real-world intrusion analysis reports that informed threat detection patterns
+- [CyberCX](https://cybercx.com.au/blog/ntfs-usnjrnl-rewind/) -- NTFS $UsnJrnl research that informed $J parsing implementation
 
 ### Beta Testers
 
