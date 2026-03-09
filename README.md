@@ -3,11 +3,21 @@
 
 https://github.com/user-attachments/assets/d0a94f52-8b2a-4735-bd01-c55e2459f7b4
 
-A high-performance native macOS application for DFIR timeline analysis. Built on Electron + SQLite to handle large files for forensic timelines (CSV, TSV, XLSX, EVTX, Plaso) without breaking a sweat.
+A high-performance native macOS application for DFIR timeline analysis. Built on Electron + SQLite to handle millions of rows from CSV, TSV, XLSX, EVTX, Plaso, raw `$MFT`, and `$J` (`$UsnJrnl`) files without breaking a sweat.
 
 Inspired by Eric Zimmerman's Timeline Explorer for Windows.
 
-For features, getting started, and documentation, visit the **[IRFlow Timeline Docs](https://r3nzsec.github.io/irflow-timeline/)**.
+### Key Features
+
+- **Raw NTFS Artifact Import** — Direct ingestion of `$MFT` and `$UsnJrnl` (`$J`) with full path reconstruction, SI/FN timestamps, and change reason mapping
+- **Ransomware Analytics** — Automated impact analysis from `$MFT` data: bulk rename detection, entropy-based extension analysis, ransom note identification, and temporal clustering
+- **VirusTotal Enrichment** — IOC matching with bulk VT lookups, malware family extraction, verdict badges, relationship pivoting, and local caching
+- **Process Inspector** — Parent-child process tree analysis with 340+ MITRE ATT&CK detection rules
+- **Lateral Movement Tracker** — Network logon and RDP session visualization as interactive force-directed graphs
+- **Persistence Analyzer** — 30+ persistence techniques with account chain detection, cross-technique correlation, and PowerShell 4104 script block reassembly
+- **IOC Matching** — 17+ indicator categories with auto-defanging, inline highlighting, CSV/HTML export with VT enrichment data
+
+For the full feature list and documentation, visit the **[IRFlow Timeline Docs](https://r3nzsec.github.io/irflow-timeline/)**.
 
 ## Building from Source
 
