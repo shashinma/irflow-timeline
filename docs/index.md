@@ -17,7 +17,7 @@ hero:
 features:
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
     title: Blazing Fast
-    details: SQLite engine with sub-100ms queries on 10M+ rows. Streams 30GB+ files with background indexing — no loading into memory.
+    details: SQLite engine with sub-100ms queries on 10M+ rows. Streams 30GB+ files with zero-copy CSV parsing, memory-capped background indexing, and single-query analytics — no loading into memory.
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>'
     title: 5 Search Modes
     details: Mixed, FTS, LIKE, Fuzzy, and Regex. Full-text search, substring matching, typo-tolerant fuzzy, and pattern matching across millions of rows.
@@ -43,8 +43,9 @@ features:
 
 ## What's New
 
+- **Performance & Stability Hardening** — Stacking analytics now resolve in a single query (3x faster), CSV parsing rewritten with zero-copy field extraction, background index builds prioritize timestamp columns and cap concurrency to prevent memory exhaustion, empty column detection uses sampling instead of full-table scans, and exports are crash-safe if a tab closes mid-write
 - **NTFS Analysis Tools** — Six tools for raw `$MFT` and `$J` files: ransomware scanning, timestomping detection, file activity heatmaps, ADS analysis, USN Journal forensics with [UsnJrnl Rewind](https://cybercx.com.au/blog/ntfs-usnjrnl-rewind/) path reconstruction (11 categories), and resident data extraction for recovering deleted threat actor artifacts
-- **VirusTotal Integration** — Single and bulk IOC lookups with persistent cache, configurable rate limiting, color-coded verdict badges, and auto-tagging
+- **VirusTotal Integration** — Single and bulk IOC lookups with persistent cache, configurable rate limiting, color-coded verdict badges, and auto-tagging. Bulk lookups are now cancellable mid-retry and stop automatically if the window closes
 - **Auto-Update** — In-app update notifications with download progress and one-click install
 - **Analyst Profiles** — Suppressions and baselines for Process Inspector false-positive management
 - **Attack Pattern Detection** — Automated MITRE ATT&CK-mapped findings for brute force, password spray, credential compromise, Impacket (5 variants), and RMM tool scanning (30 tools)
@@ -78,7 +79,7 @@ If you've hit Excel's 1M-row limit on a super-timeline, or you're tired of spinn
 
 ### Built for Scale
 
-IRFlow Timeline uses a SQLite-backed architecture with streaming import, lazy indexing, and virtual scrolling to deliver responsive performance even on the largest forensic timelines. Handle large CSV files (tested with 30GB+), search across millions of rows, and visualize your timeline — all without freezing.
+IRFlow Timeline uses a SQLite-backed architecture with streaming import, lazy indexing, and virtual scrolling to deliver responsive performance even on the largest forensic timelines. Handle large CSV files (tested with 30GB+), search across millions of rows, and visualize your timeline — all without freezing. Concurrent index builds are memory-capped, analytics queries are optimized to avoid redundant table scans, and all long-running operations are crash-safe with graceful recovery.
 
 ### KAPE-Ready
 
