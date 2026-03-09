@@ -64,7 +64,7 @@ This page outlines the planned direction for IRFlow Timeline. Priorities may shi
 See the [Changelog](/about/changelog) for detailed release notes on everything shipped so far. Highlights from recent releases:
 
 - **Auto-Update** — In-app update notifications with download progress, one-click install, and automatic startup checks
-- **NTFS Analysis Tools** — Raw `$MFT` and `$J` (USN Journal) import with six analysis tools: Ransomware Analysis (with PDF export), Timestomping Detection, File Activity Heatmap, ADS Analyzer, USN Journal Analysis (11 categories), and Resident Data Extraction
+- **NTFS Analysis Tools** — Raw `$MFT` and `$J` (USN Journal) import with six analysis tools: Ransomware Analysis (with PDF export), Timestomping Detection, File Activity Heatmap, ADS Analyzer, USN Journal Analysis with [UsnJrnl Rewind](https://cybercx.com.au/blog/ntfs-usnjrnl-rewind/) path reconstruction (11 categories), and Resident Data Extraction for recovering deleted threat actor artifacts
 - **VirusTotal Integration** — API key configuration, single and bulk IOC lookups, persistent SQLite cache with configurable TTL, rate limiting, color-coded verdict badges, and auto-tagging
 - **Analyst Profiles** — Suppressions and baselines for Process Inspector false-positive management with save/load persistence
 - **v1.0.3-beta** — Lateral Movement attack pattern detection, RDP session grouping, menu bar redesign, row checkbox selection, Find Duplicates, Persistence Analyzer custom rules

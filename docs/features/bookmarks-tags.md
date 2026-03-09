@@ -94,7 +94,7 @@ Several analysis tools automatically create bulk tags:
 - `Encrypted`, `Ransom Note`, `Payload` — from ransomware analysis
 - `Modified Burst`, `Created Burst` — from burst detection
 - `IOC: {value}` — from IOC matching
-- `malicious`, `suspicious`, `clean` — from VirusTotal enrichment
+- `VT: Malicious`, `VT: Suspicious`, `VT: Clean` — from VirusTotal enrichment
 
 ### Removing Tags
 

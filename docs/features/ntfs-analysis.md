@@ -104,7 +104,21 @@ Downloaded files identified through Zone.Identifier ADS are auto-tagged with `Do
 
 ## USN Journal Analysis
 
-The USN (Update Sequence Number) Journal records every change to files and directories on an NTFS volume. This tool performs 11 targeted forensic analyses on raw `$J` data.
+The USN (Update Sequence Number) Journal records every change to files and directories on an NTFS volume. This tool performs 11 targeted forensic analyses on raw `$J` data with full path reconstruction powered by the UsnJrnl Rewind methodology.
+
+### UsnJrnl Rewind Path Resolution
+
+A core challenge with USN Journal analysis is that most tools show "UNKNOWN" paths for deleted files — because the parent MFT entries have been overwritten or reallocated by the time you acquire the image. IRFlow Timeline integrates the [UsnJrnl Rewind](https://cybercx.com.au/blog/ntfs-usnjrnl-rewind/) methodology (originally published by CyberCX) to solve this.
+
+Rather than matching parent references against the current MFT state, UsnJrnl Rewind processes journal records in **reverse chronological order**, maintaining stateful information about every filesystem entry. This rebuilds parent-child relationships from the journal itself, reconstructing full paths for files and folders even when:
+
+- The parent directory has been deleted
+- MFT entries have been reallocated multiple times
+- The threat actor cleaned up staging directories after the operation
+
+The result: complete path context for every USN Journal entry, where conventional tools would show orphaned file references with no directory information.
+
+When an `$MFT` tab is also loaded, IRFlow Timeline combines both resolution methods — journal-based rewind and MFT parent reference chain-walking — for maximum path coverage.
 
 ### Analysis Categories
 
@@ -126,11 +140,11 @@ The USN (Update Sequence Number) Journal records every change to files and direc
 
 - **Time range** — restrict analysis to a specific start and end time
 - **Path filter** — focus on a directory subtree
-- **MFT cross-reference** — select an imported `$MFT` tab to enrich USN entries with full file paths via parent reference chain-walking
+- **MFT cross-reference** — select an imported `$MFT` tab to enrich USN entries with full file paths via MFT parent reference chain-walking (combined with journal-based rewind for maximum coverage)
 
 ### Results
 
-Each analysis category returns relevant entries with timestamps, file references, reason flags, and source information. The tool also generates:
+Each analysis category returns relevant entries with timestamps, full reconstructed paths, file references, reason flags, and source information. The tool also generates:
 
 - **Timeline** — chronological view of all significant events
 - **File chains** — sequences of operations on the same file (create → modify → rename → delete)
@@ -142,18 +156,25 @@ Each analysis category returns relevant entries with timestamps, file references
 
 Extracts files that are stored directly within MFT records (resident `$DATA` attribute). Small files (typically under 700 bytes) are stored inline in the MFT rather than in separate disk clusters. This tool extracts those embedded files to an output folder.
 
-### Use Cases
+This is a high-value capability for incident response: when a threat actor drops a small script, config file, or loader and later deletes it, the content often survives in the MFT long after the file is gone from disk. The MFT entry may be marked as free, but the resident data remains until the entry is reallocated and overwritten.
 
-- Recover small files that may have been deleted from disk but remain in the MFT
-- Extract configuration files, scripts, and small payloads stored as resident data
-- Identify suspicious small executables or scripts embedded in MFT records
+### What It Recovers
+
+- **Deleted scripts and loaders** — batch files, PowerShell scripts, VBScript, and small executables that the attacker cleaned up post-exploitation
+- **Configuration files** — ransomware configs, C2 beacon configs, and tool configuration dropped during the attack
+- **Staging artifacts** — small text files, credential dumps, and reconnaissance output the attacker used then deleted
+- **Legitimate small files** — useful for baselining and identifying which resident files are anomalous
 
 ### How to Use
 
 1. Import a raw `$MFT` file
 2. Open **Tools > Extract Resident Data**
 3. Select an output folder
-4. The tool scans MFT records and writes resident files to the output directory
+4. The tool scans MFT records and writes resident files to the output directory, preserving the original file paths as subdirectories
+
+::: tip Combine with IOC Matching
+After extracting resident data, run IOC matching against the MFT tab to identify known-bad filenames and paths among the recovered files.
+:::
 
 ## See Also
 

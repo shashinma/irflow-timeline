@@ -43,7 +43,7 @@ features:
 
 ## What's New
 
-- **NTFS Analysis Tools** — Six tools for raw `$MFT` and `$J` files: ransomware scanning, timestomping detection, file activity heatmaps, ADS analysis, USN Journal forensics (11 categories), and resident data extraction
+- **NTFS Analysis Tools** — Six tools for raw `$MFT` and `$J` files: ransomware scanning, timestomping detection, file activity heatmaps, ADS analysis, USN Journal forensics with [UsnJrnl Rewind](https://cybercx.com.au/blog/ntfs-usnjrnl-rewind/) path reconstruction (11 categories), and resident data extraction for recovering deleted threat actor artifacts
 - **VirusTotal Integration** — Single and bulk IOC lookups with persistent cache, configurable rate limiting, color-coded verdict badges, and auto-tagging
 - **Auto-Update** — In-app update notifications with download progress and one-click install
 - **Analyst Profiles** — Suppressions and baselines for Process Inspector false-positive management
