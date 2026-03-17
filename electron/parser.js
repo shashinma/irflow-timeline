@@ -1096,7 +1096,7 @@ async function parsePlasoFile(filePath, tabId, db, onProgress) {
       const edCount = plasoDb.prepare("SELECT COUNT(*) as cnt FROM event_data").get().cnt;
       const midOffset = Math.max(0, Math.floor(edCount / 2));
       const endOffset = Math.max(0, edCount - 200);
-      const sampleSql = `SELECT _data FROM event_data LIMIT 300 UNION ALL SELECT _data FROM (SELECT _data FROM event_data LIMIT 200 OFFSET ${midOffset}) UNION ALL SELECT _data FROM (SELECT _data FROM event_data LIMIT 200 OFFSET ${endOffset})`;
+      const sampleSql = `SELECT _data FROM (SELECT _data FROM event_data LIMIT 300) UNION ALL SELECT _data FROM (SELECT _data FROM event_data LIMIT 200 OFFSET ${midOffset}) UNION ALL SELECT _data FROM (SELECT _data FROM event_data LIMIT 200 OFFSET ${endOffset})`;
       for (const row of plasoDb.prepare(sampleSql).iterate()) {
         const obj = parsePlasoBlob(row._data, useZlib);
         for (const key of Object.keys(obj)) {

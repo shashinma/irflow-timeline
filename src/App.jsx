@@ -532,6 +532,7 @@ function formatBytes(bytes) {
 }
 
 function formatNumber(n) {
+  if (n == null) return "0";
   return n.toLocaleString();
 }
 
@@ -5121,7 +5122,7 @@ export default function App() {
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>⌬</div>
             <h2 style={{ margin: "0 0 4px", fontSize: 20, fontWeight: 700, color: th.text, fontFamily: "-apple-system, sans-serif" }}>IRFlow Timeline</h2>
-            <div style={{ fontSize: 12, color: th.textMuted, marginBottom: 16, fontFamily: "-apple-system, sans-serif" }}>Version 1.0.3-beta</div>
+            <div style={{ fontSize: 12, color: th.textMuted, marginBottom: 16, fontFamily: "-apple-system, sans-serif" }}>Version 1.0.5</div>
             <div style={{ textAlign: "left", background: th.bgAlt, borderRadius: 8, padding: 16, marginBottom: 16 }}>
               <p style={{ margin: "0 0 8px", fontSize: 12, color: th.text, lineHeight: 1.6, fontFamily: "-apple-system, sans-serif" }}>
                 A high-performance native macOS timeline analysis tool built for DFIR professionals, capable of ingesting millions of rows from CSV, XLSX, EVTX, Plaso, raw $MFT, and $J ($UsnJrnl) files without breaking a sweat.
@@ -19497,7 +19498,7 @@ strong{color:${c.text}}
       {contextMenu && (
         <>
           <div onMouseDown={(e) => { if (e.button === 0) setContextMenu(null); }} onContextMenu={(e) => { e.preventDefault(); }} style={{ position: "fixed", inset: 0, zIndex: 299 }} />
-          <div style={{ position: "fixed", left: contextMenu.x, top: contextMenu.y, background: themeName === "dark" ? "rgba(30,33,38,0.82)" : "rgba(255,255,255,0.88)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", border: `1px solid ${themeName === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`, borderRadius: 10, padding: "5px 0", zIndex: 300, boxShadow: themeName === "dark" ? "0 12px 40px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.06) inset" : "0 12px 40px rgba(0,0,0,0.18), 0 0 0 0.5px rgba(255,255,255,0.5) inset", minWidth: 200 }}>
+          <div style={{ position: "fixed", left: contextMenu.x, top: contextMenu.y, background: themeName === "dark" ? "rgba(28,31,36,0.97)" : "rgba(252,252,254,0.97)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", border: `1px solid ${themeName === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`, borderRadius: 10, padding: "5px 0", zIndex: 300, boxShadow: themeName === "dark" ? "0 12px 40px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.06) inset" : "0 12px 40px rgba(0,0,0,0.18), 0 0 0 0.5px rgba(255,255,255,0.5) inset", minWidth: 200 }}>
             {[
               ...(contextMenu.colName !== "__tags__" ? [
                 { label: (ct?.pinnedColumns || []).includes(contextMenu.colName) ? "Unpin Column" : "Pin Column",
@@ -19568,7 +19569,7 @@ strong{color:${c.text}}
       {rowContextMenu && (
         <>
           <div onMouseDown={(e) => { if (e.button === 0) setRowContextMenu(null); }} onContextMenu={(e) => { e.preventDefault(); }} style={{ position: "fixed", inset: 0, zIndex: 299 }} />
-          <div style={{ position: "fixed", left: Math.min(rowContextMenu.x, window.innerWidth - 220), top: Math.min(rowContextMenu.y, window.innerHeight - 300), background: themeName === "dark" ? "rgba(30,33,38,0.82)" : "rgba(255,255,255,0.88)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", border: `1px solid ${themeName === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`, borderRadius: 10, padding: "5px 0", zIndex: 300, boxShadow: themeName === "dark" ? "0 12px 40px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.06) inset" : "0 12px 40px rgba(0,0,0,0.18), 0 0 0 0.5px rgba(255,255,255,0.5) inset", minWidth: 200 }}>
+          <div style={{ position: "fixed", left: Math.min(rowContextMenu.x, window.innerWidth - 220), top: Math.min(rowContextMenu.y, window.innerHeight - 300), background: themeName === "dark" ? "rgba(28,31,36,0.97)" : "rgba(252,252,254,0.97)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", border: `1px solid ${themeName === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`, borderRadius: 10, padding: "5px 0", zIndex: 300, boxShadow: themeName === "dark" ? "0 12px 40px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.06) inset" : "0 12px 40px rgba(0,0,0,0.18), 0 0 0 0.5px rgba(255,255,255,0.5) inset", minWidth: 200 }}>
             {rowContextMenu.cellColumn && (
               <button onClick={() => { copyCell(rowContextMenu.cellValue); setRowContextMenu(null); }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = `${th.accent}22`; }}
@@ -19647,7 +19648,7 @@ strong{color:${c.text}}
                     <span style={{ marginLeft: "auto", color: th.textMuted, fontSize: 11 }}>▸</span>
                   </button>
                   {/* Tags submenu */}
-                  <div data-tag-sub="" style={{ display: "none", position: "absolute", left: "100%", top: -5, background: themeName === "dark" ? "rgba(30,33,38,0.82)" : "rgba(255,255,255,0.88)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", border: `1px solid ${themeName === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`, borderRadius: 10, padding: "5px 0", boxShadow: themeName === "dark" ? "0 12px 40px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.06) inset" : "0 12px 40px rgba(0,0,0,0.18), 0 0 0 0.5px rgba(255,255,255,0.5) inset", minWidth: 160, zIndex: 301 }}>
+                  <div data-tag-sub="" style={{ display: "none", position: "absolute", left: "100%", top: -5, background: themeName === "dark" ? "rgba(28,31,36,0.97)" : "rgba(252,252,254,0.97)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", border: `1px solid ${themeName === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`, borderRadius: 10, padding: "5px 0", boxShadow: themeName === "dark" ? "0 12px 40px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.06) inset" : "0 12px 40px rgba(0,0,0,0.18), 0 0 0 0.5px rgba(255,255,255,0.5) inset", minWidth: 160, zIndex: 301 }}>
                     {tagEntries.map(([tag, color]) => {
                       const hasTg = rowContextMenu.currentTags.includes(tag);
                       return (
@@ -19786,7 +19787,7 @@ strong{color:${c.text}}
       {cellContextMenu && (
         <>
           <div onMouseDown={(e) => { if (e.button === 0) setCellContextMenu(null); }} onContextMenu={(e) => { e.preventDefault(); }} style={{ position: "fixed", inset: 0, zIndex: 299 }} />
-          <div style={{ position: "fixed", left: Math.min(cellContextMenu.x, window.innerWidth - 240), top: Math.min(cellContextMenu.y, window.innerHeight - 160), background: themeName === "dark" ? "rgba(30,33,38,0.82)" : "rgba(255,255,255,0.88)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", border: `1px solid ${themeName === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`, borderRadius: 10, padding: "5px 0", zIndex: 300, boxShadow: themeName === "dark" ? "0 12px 40px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.06) inset" : "0 12px 40px rgba(0,0,0,0.18), 0 0 0 0.5px rgba(255,255,255,0.5) inset", minWidth: 200 }}>
+          <div style={{ position: "fixed", left: Math.min(cellContextMenu.x, window.innerWidth - 240), top: Math.min(cellContextMenu.y, window.innerHeight - 160), background: themeName === "dark" ? "rgba(28,31,36,0.97)" : "rgba(252,252,254,0.97)", backdropFilter: "blur(20px) saturate(180%)", WebkitBackdropFilter: "blur(20px) saturate(180%)", border: `1px solid ${themeName === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.12)"}`, borderRadius: 10, padding: "5px 0", zIndex: 300, boxShadow: themeName === "dark" ? "0 12px 40px rgba(0,0,0,0.55), 0 0 0 0.5px rgba(255,255,255,0.06) inset" : "0 12px 40px rgba(0,0,0,0.18), 0 0 0 0.5px rgba(255,255,255,0.5) inset", minWidth: 200 }}>
             <div style={{ padding: "4px 14px 2px", color: th.textMuted, fontSize: 10, fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", textTransform: "uppercase", letterSpacing: "0.06em" }}>Filters</div>
             {[
               { label: `Filter in ${cellContextMenu.cellValue ? String(cellContextMenu.cellValue).slice(0, 40) : "(empty)"}`,

@@ -14,7 +14,10 @@ concurrency:
 
 jobs:
   release:
-    runs-on: macos-14
+    # macos-13 is Intel (x86_64). Universal builds with native addons (better-sqlite3)
+    # require Intel — ARM64 runners (macos-14) cannot reliably cross-compile .node files
+    # to x86_64, resulting in arm64-only binaries that crash on Intel Macs.
+    runs-on: macos-13
     env:
       IRFLOW_UPDATE_BASE_URL: ${{ vars.IRFLOW_UPDATE_BASE_URL }}
       IRFLOW_UPDATE_CHANNEL: ${{ vars.IRFLOW_UPDATE_CHANNEL }}
@@ -92,12 +95,38 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build universal better-sqlite3 native module
+        shell: bash
+        run: |
+          set -euo pipefail
+          electron_version="$(node -p "require('./node_modules/electron/package.json').version")"
+
+          # Build for x86_64 (native on this Intel runner)
+          npx @electron/rebuild -f -w better-sqlite3 -v "${electron_version}" --arch x64
+          cp node_modules/better-sqlite3/build/Release/better_sqlite3.node /tmp/bs3_x64.node
+
+          # Build for arm64 (cross-compile from Intel)
+          npx @electron/rebuild -f -w better-sqlite3 -v "${electron_version}" --arch arm64
+          cp node_modules/better-sqlite3/build/Release/better_sqlite3.node /tmp/bs3_arm64.node
+
+          # Merge into a universal fat binary
+          lipo -create /tmp/bs3_x64.node /tmp/bs3_arm64.node \
+               -output node_modules/better-sqlite3/build/Release/better_sqlite3.node
+
+          echo "Universal binary verified:"
+          lipo -info node_modules/better-sqlite3/build/Release/better_sqlite3.node
+
       - name: Build signed macOS release
         shell: bash
         run: |
           set -euo pipefail
           export IRFLOW_UPDATE_CHANNEL="${IRFLOW_UPDATE_CHANNEL:-latest}"
-          npm run dist
+          # Clean any stale artifacts from prior runs before building.
+          rm -rf release
+          # --config.npmRebuild=false: skip electron-builder's built-in native module
+          # rebuild since we already pre-built the universal fat binary above.
+          npm run build:renderer
+          npx electron-builder --config electron-builder.config.cjs --mac --config.npmRebuild=false
 
       - name: Collect release artifacts
         id: artifacts
@@ -105,9 +134,12 @@ jobs:
         run: |
           set -euo pipefail
 
+          pkg_version="$(node -p "require('./package.json').version")"
           channel="${IRFLOW_UPDATE_CHANNEL:-latest}"
-          dmg_path="$(find release -maxdepth 1 -type f -name '*.dmg' | sort | head -n 1)"
-          zip_path="$(find release -maxdepth 1 -type f -name '*.zip' | sort | head -n 1)"
+
+          # Match the exact version to guard against any stale files surviving the clean.
+          dmg_path="$(find release -maxdepth 1 -type f -name "*${pkg_version}*.dmg" | sort | head -n 1)"
+          zip_path="$(find release -maxdepth 1 -type f -name "*${pkg_version}*.zip" | sort | head -n 1)"
 
           if [ "${channel}" = "latest" ]; then
             yml_name="latest-mac.yml"
