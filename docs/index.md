@@ -73,7 +73,7 @@ If you've hit Excel's 1M-row limit on a super-timeline, or you're tired of spinn
 | **CSV/TSV** | `.csv`, `.tsv`, `.txt`, `.log` | Auto-detects delimiters (comma, tab, pipe) |
 | **Excel** | `.xlsx`, `.xls`, `.xlsm` | Streaming reader (XLSX) + legacy binary parser (XLS) with sheet selection |
 | **EVTX** | `.evtx` | Windows Event Log binary format |
-| **Plaso** | `.plaso` | Forensic timeline database |
+| **Plaso** | `.plaso`, `.timeline` | Forensic timeline database (`.timeline` auto-detects; falls back to CSV) |
 | **Raw $MFT** | `.mft` | NTFS Master File Table — direct import for NTFS analysis tools |
 | **Raw $J** | `.$J`, `.usn` | NTFS USN Journal (change journal) |
 

@@ -14,7 +14,7 @@ Technical overview of IRFlow Timeline's architecture for developers and contribu
 
 ### Renderer Process (React)
 
-**File:** `src/App.jsx` (~19,100 lines) + `src/detection-rules.js` (~383 lines)
+**File:** `src/App.jsx` (~19,900 lines) + `src/detection-rules.js` (~383 lines)
 
 The renderer runs in a sandboxed browser context with no direct Node.js access. All system operations go through the IPC bridge.
 
@@ -29,17 +29,17 @@ Responsibilities:
 
 ### Preload Bridge
 
-**File:** `preload.js` (~134 lines)
+**File:** `preload.js` (~137 lines)
 
-The preload script creates a secure bridge between the renderer and main process using Electron's `contextBridge` API. It exposes 132 methods and event listeners as `window.tle`, covering file ops, data queries, tag/bookmark ops, IOC matching, VirusTotal enrichment, NTFS analysis, analyst profiles, auto-updates, session persistence, and filter presets.
+The preload script creates a secure bridge between the renderer and main process using Electron's `contextBridge` API. It exposes ~112 methods and event listeners as `window.tle`, covering file ops, data queries, tag/bookmark ops, IOC matching, VirusTotal enrichment, NTFS analysis, analyst profiles, auto-updates, session persistence, and filter presets.
 
 ### Main Process (Electron)
 
-**Files:** `main.js` (~1,891 lines) + `updater.js` (~544 lines) + `logger.js` (~46 lines)
+**Files:** `main.js` (~2,050 lines) + `updater.js` (~544 lines) + `logger.js` (~46 lines)
 
 The main process runs with full Node.js access and manages:
 - Window lifecycle and native menus
-- IPC handler registration (69 handlers via `safeHandle()`)
+- IPC handler registration (72 handlers via `safeHandle()`)
 - File dialog management
 - Export orchestration (CSV, TSV, XLSX, XLS, HTML, PDF)
 - Session save/load coordination
@@ -50,7 +50,7 @@ The main process runs with full Node.js access and manages:
 
 ### Data Engine (SQLite)
 
-**File:** `db.js` (~12,797 lines)
+**File:** `db.js` (~14,100 lines)
 
 The `TimelineDB` class wraps `better-sqlite3` with forensic-analysis-specific operations:
 
@@ -87,7 +87,7 @@ CREATE TABLE color_rules (id, col_name, condition, value, bg_color, fg_color);
 
 ### Parser Layer
 
-**File:** `parser.js` (~2,531 lines)
+**File:** `parser.js` (~2,600 lines)
 
 Streaming parsers convert source files into SQLite batch inserts:
 
@@ -156,7 +156,7 @@ UI Action → IPC → db.queryRows() → SQL Query → Result Set → IPC → Gr
 ## Security Model
 
 - **Context isolation** enabled — renderer has no Node.js access
-- **Preload bridge** exposes only whitelisted IPC methods (132 entries)
+- **Preload bridge** exposes only whitelisted IPC methods (~112 entries)
 - **No remote content** — purely local data processing
 - **Hardened runtime** enabled for macOS distribution
 - **Minimal network access** — only VirusTotal API lookups (opt-in, requires user-provided API key) and auto-update checks. All forensic processing is fully offline

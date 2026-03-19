@@ -241,13 +241,22 @@ The context menu uses a macOS-style glass/blur aesthetic with inline SVG icons f
 | Stacked bars | **Stack Values** | Open value frequency analysis |
 | Bar chart | **Column Stats** | Value distribution and type statistics |
 
-### Row / Cell (Cmd+Click)
+### Cell Quick Actions (Cmd+Click)
 
-- **Copy Cell** value
-- **Copy Row** as TSV
-- **Bookmark / Remove Bookmark**
-- **Add Tag**
-- **Bulk Tag / Untag** selected rows
+`Cmd+Click` any cell to open a compact quick-action menu:
+
+- **Filter in** — show only rows matching that cell's value
+- **Filter out** — exclude rows with that cell's value
+- **Hide column** — remove the column from view
+
+### Row Context Menu (Right-Click)
+
+Right-click any cell to open the full context menu:
+
+- **Copy Cell** / **Copy Row** — copy the cell value or entire row as TSV
+- **Filter in / Filter out** — quick filtering by the clicked cell's value
+- **Tags ▸** — hover submenu to toggle tags. When multiple rows are selected, applies to all selected rows (shows count, e.g., "Tags (4 rows)")
+- **VirusTotal Lookup** — look up the cell value on VirusTotal (for IPs, hashes, domains)
 
 ## Find Duplicates
 

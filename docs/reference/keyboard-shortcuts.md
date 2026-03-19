@@ -57,7 +57,7 @@ description: Keyboard shortcuts reference for IRFlow Timeline — file operation
 
 | Shortcut | Action |
 |----------|--------|
-| `Cmd+C` | Copy selected rows |
+| `Cmd+C` | Copy selected rows (if text is selected in the detail panel, copies that instead) |
 | Select All | Select all rows (Actions menu) |
 | Deselect All | Clear selection (Actions menu) |
 | Invert Selection | Toggle selection state (Actions menu) |
