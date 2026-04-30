@@ -1662,7 +1662,7 @@ export default function App() {
       setCrossTabCounts({ term, mode, cond, results });
     }, 600);
     return () => { if (crossTabTimer.current) clearTimeout(crossTabTimer.current); };
-  }, [ct?.searchTerm, ct?.searchMode, tabs.length, tle]); // eslint-disable-line
+  }, [ct?.searchTerm, ct?.searchMode, ct?.searchCondition, tabs.length, tle]); // eslint-disable-line
 
   // ── Reset column widths ────────────────────────────────────────
   const resetColumnWidths = useCallback(() => {
@@ -2873,7 +2873,7 @@ export default function App() {
         </div>
       ))}
       <h4 style={{ color: th.text, fontSize: 12, marginTop: 12, marginBottom: 6 }}>Mixed Search Syntax</h4>
-      {[["word1 word2", "OR"], ["+word", "AND (must include)"], ["-word", "EXCLUDE"], ['"exact phrase"', "Phrase"], ["Column:value", "Column filter"]].map(([s, d]) => (
+      {[["word1 word2", "AND"], ["+word", "AND (must include)"], ["-word", "EXCLUDE"], ['"exact phrase"', "Phrase"], ["Column:value", "Column filter"]].map(([s, d]) => (
         <div key={s} style={{ fontSize: 12, color: th.textDim, padding: "2px 0" }}>
           <code style={{ background: th.btnBg, padding: "1px 5px", borderRadius: 3, color: th.accent }}>{s}</code> — {d}
         </div>
@@ -3679,7 +3679,7 @@ export default function App() {
         <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 12px", background: th.panelBg, borderBottom: `1px solid ${th.border}`, flexShrink: 0, overflowX: "auto" }}>
           <span style={{ color: th.textMuted, fontSize: 10, whiteSpace: "nowrap", marginRight: 4 }}>Across tabs:</span>
           {crossTabCounts.results.map((r) => (
-            <button key={r.tabId} onClick={() => { if (r.count > 0) { setActiveTab(r.tabId); setTabs((prev) => prev.map((t) => t.id === r.tabId ? { ...t, searchTerm: crossTabCounts.term, searchMode: crossTabCounts.mode } : t)); } }}
+            <button key={r.tabId} onClick={() => { if (r.count > 0) { setActiveTab(r.tabId); setTabs((prev) => prev.map((t) => t.id === r.tabId ? { ...t, searchTerm: crossTabCounts.term, searchMode: crossTabCounts.mode, searchCondition: crossTabCounts.cond || "contains" } : t)); } }}
               style={{ display: "flex", alignItems: "center", gap: 3, padding: "1px 8px", borderRadius: 10, border: `1px solid ${r.count > 0 ? th.borderAccent + "66" : th.border}`, background: r.tabId === activeTab ? th.selection : "transparent", cursor: r.count > 0 ? "pointer" : "default", fontSize: 10, color: r.count > 0 ? th.text : th.textMuted, whiteSpace: "nowrap" }}>
               <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis" }}>{r.name}</span>
               <span style={{ color: r.count > 0 ? th.success : th.textMuted, fontWeight: 600 }}>{formatNumber(r.count)}</span>

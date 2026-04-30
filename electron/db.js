@@ -1250,6 +1250,26 @@ class TimelineDB {
     // Concatenate all columns into one string — 1 LIKE per term instead of N per column.
     if (!meta.ftsReady) {
       const concat = meta.safeCols.map((c) => `COALESCE(${c.safe},'')`).join(" || ' ' || ");
+      if (searchMode === "mixed") {
+        const mixed = this._parseMixedSearch(searchTerm, meta);
+        const mixedConditions = [];
+        for (const term of mixed.positiveTerms) {
+          params.push(`%${term}%`);
+          mixedConditions.push(`(${concat}) LIKE ?`);
+        }
+        for (const term of mixed.negativeTerms) {
+          params.push(`%${term}%`);
+          mixedConditions.push(`(${concat}) NOT LIKE ?`);
+        }
+        if (mixedConditions.length > 0) {
+          whereConditions.push(`(${mixedConditions.join(" AND ")})`);
+        }
+        for (const cc of mixed.colConditions) {
+          whereConditions.push(cc.sql);
+          params.push(cc.param);
+        }
+        return;
+      }
       const terms = searchMode === "exact" ? [searchTerm.trim()] : searchTerm.trim().split(/\s+/).filter(Boolean);
       const joinOp = (searchMode === "or") ? " OR " : " AND ";
       const termConditions = terms.map((term) => {
@@ -1259,10 +1279,26 @@ class TimelineDB {
       whereConditions.push(`(${termConditions.join(joinOp)})`);
       return;
     }
-    const { ftsQuery, colConditions } = this._buildSearchQuery(searchTerm, searchMode, meta);
-    if (ftsQuery) {
-      whereConditions.push(`data.rowid IN (SELECT rowid FROM data_fts WHERE data_fts MATCH ?)`);
-      params.push(ftsQuery);
+    const { ftsQuery, colConditions, likeSupplement, negativeTerms = [] } = this._buildSearchQuery(searchTerm, searchMode, meta);
+    if (ftsQuery || likeSupplement) {
+      const concat = meta.safeCols.map((c) => `COALESCE(${c.safe},'')`).join(" || ' ' || ");
+      if (ftsQuery && likeSupplement) {
+        whereConditions.push(`(data.rowid IN (SELECT rowid FROM data_fts WHERE data_fts MATCH ?) OR (${concat}) LIKE ?)`);
+        params.push(ftsQuery, likeSupplement);
+      } else if (ftsQuery) {
+        whereConditions.push(`data.rowid IN (SELECT rowid FROM data_fts WHERE data_fts MATCH ?)`);
+        params.push(ftsQuery);
+      } else {
+        whereConditions.push(`(${concat}) LIKE ?`);
+        params.push(likeSupplement);
+      }
+    }
+    if (!ftsQuery && negativeTerms.length > 0) {
+      const concat = meta.safeCols.map((c) => `COALESCE(${c.safe},'')`).join(" || ' ' || ");
+      for (const term of negativeTerms) {
+        params.push(`%${term}%`);
+        whereConditions.push(`(${concat}) NOT LIKE ?`);
+      }
     }
     for (const cc of colConditions) {
       whereConditions.push(cc.sql);
@@ -1445,15 +1481,90 @@ class TimelineDB {
   }
 
   /**
+   * Parse mixed-mode search syntax into free-text and column-specific components.
+   */
+  _parseMixedSearch(searchTerm, meta) {
+    const tokens = [];
+    const regex = /"([^"]+)"|(\S+)/g;
+    let m;
+    while ((m = regex.exec(searchTerm)) !== null) {
+      tokens.push(m[1] ? `"${m[1]}"` : m[2]);
+    }
+
+    const parsed = {
+      tokens,
+      ftsTerms: [],
+      positiveTerms: [],
+      negativeTerms: [],
+      colConditions: [],
+      hasOperator: false,
+      hasQuotedPhrase: false,
+      hasColumnFilter: false,
+    };
+
+    for (const token of tokens) {
+      if (token.startsWith('"')) {
+        parsed.hasQuotedPhrase = true;
+        const phrase = token.slice(1, -1).replace(/"/g, "").trim();
+        if (!phrase) continue;
+        parsed.ftsTerms.push(`"${phrase}"`);
+        parsed.positiveTerms.push(phrase);
+        continue;
+      }
+
+      if (token.includes(":")) {
+        const colonIdx = token.indexOf(":");
+        const colPart = token.substring(0, colonIdx);
+        const valPart = token.substring(colonIdx + 1);
+        if (valPart) {
+          const matchCol = meta.headers.find((h) => h.toLowerCase() === colPart.toLowerCase());
+          const safeCol = matchCol ? meta.colMap[matchCol] : null;
+          if (safeCol) {
+            parsed.hasColumnFilter = true;
+            parsed.colConditions.push({ sql: `${safeCol} LIKE ?`, param: `%${valPart}%` });
+            continue;
+          }
+        }
+      }
+
+      if (token.startsWith("-")) {
+        parsed.hasOperator = true;
+        const term = token.slice(1).replace(/"/g, "").trim();
+        if (!term) continue;
+        parsed.ftsTerms.push(`NOT "${term}"`);
+        parsed.negativeTerms.push(term);
+        continue;
+      }
+
+      if (token.startsWith("+")) {
+        parsed.hasOperator = true;
+        const term = token.slice(1).replace(/"/g, "").trim();
+        if (!term) continue;
+        parsed.ftsTerms.push(`"${term}"`);
+        parsed.positiveTerms.push(term);
+        continue;
+      }
+
+      const cleaned = token.replace(/"/g, "").trim();
+      if (!cleaned) continue;
+      parsed.ftsTerms.push(`"${cleaned}"`);
+      parsed.positiveTerms.push(cleaned);
+    }
+
+    return parsed;
+  }
+
+  /**
    * Build search query from search term and mode.
    * Returns { ftsQuery, colConditions } where:
    *   - ftsQuery: FTS5 MATCH string (or null if no FTS terms)
    *   - colConditions: array of { sql, param } for column-specific Col:value filters
+   *   - likeSupplement: optional LIKE pattern used to broaden mixed-mode contains searches
    */
   _buildSearchQuery(searchTerm, searchMode, meta) {
     // Lazy-build FTS index on first search
     this._ensureFts(meta.tabId);
-    const result = { ftsQuery: null, colConditions: [] };
+    const result = { ftsQuery: null, colConditions: [], likeSupplement: null, negativeTerms: [] };
     try {
       if (searchMode === "exact") {
         const cleaned = searchTerm.replace(/"/g, "").trim();
@@ -1474,45 +1585,27 @@ class TimelineDB {
       }
 
       // Mixed mode — parse +AND, -EXCLUDE, "phrases", Column:value
-      const tokens = [];
-      const regex = /"([^"]+)"|(\S+)/g;
-      let m;
-      while ((m = regex.exec(searchTerm)) !== null) {
-        tokens.push(m[1] ? `"${m[1]}"` : m[2]);
-      }
+      const mixed = this._parseMixedSearch(searchTerm, meta);
+      const { ftsTerms, hasOperator, hasQuotedPhrase, hasColumnFilter } = mixed;
+      result.colConditions = mixed.colConditions;
+      result.negativeTerms = mixed.negativeTerms;
 
-      const ftsTerms = [];
-      for (const token of tokens) {
-        if (token.startsWith('"')) {
-          ftsTerms.push(token);
-        } else if (token.includes(":")) {
-          // Column-specific filter: Col:value → WHERE colSafe LIKE %value%
-          const colonIdx = token.indexOf(":");
-          const colPart = token.substring(0, colonIdx);
-          const valPart = token.substring(colonIdx + 1);
-          if (valPart) {
-            // Find matching column (case-insensitive)
-            const matchCol = meta.headers.find((h) => h.toLowerCase() === colPart.toLowerCase());
-            const safeCol = matchCol ? meta.colMap[matchCol] : null;
-            if (safeCol) {
-              result.colConditions.push({ sql: `${safeCol} LIKE ?`, param: `%${valPart}%` });
-            }
-          }
-        } else if (token.startsWith("-")) {
-          const term = token.slice(1);
-          if (term) ftsTerms.push(`NOT "${term}"`);
-        } else if (token.startsWith("+")) {
-          const term = token.slice(1);
-          if (term) ftsTerms.push(`"${term}"`);
-        } else {
-          ftsTerms.push(`"${token}"`);
+      const positiveFtsTerms = ftsTerms.filter((term) => !term.startsWith("NOT "));
+
+      if (positiveFtsTerms.length > 0) {
+        // Default to AND for multi-word (DFIR analysts want all terms to match)
+        result.ftsQuery = positiveFtsTerms.join(hasOperator ? " AND " : (positiveFtsTerms.length > 1 ? " AND " : ""));
+        for (const term of mixed.negativeTerms) {
+          result.ftsQuery += ` NOT "${term.replace(/"/g, "")}"`;
         }
       }
 
-      if (ftsTerms.length > 0) {
-        const hasOperator = tokens.some((t) => t.startsWith("+") || t.startsWith("-"));
-        // Default to AND for multi-word (DFIR analysts want all terms to match)
-        result.ftsQuery = ftsTerms.join(hasOperator ? " AND " : (ftsTerms.length > 1 ? " AND " : ""));
+      // Mixed mode supplements FTS with substring matching for phrase-like or
+      // punctuation-heavy searches (paths, hashes, obfuscated strings, etc.).
+      const trimmed = searchTerm.trim();
+      const plainQuery = !hasOperator && !hasQuotedPhrase && !hasColumnFilter;
+      if (plainQuery && trimmed && (/\s/.test(trimmed) || /[^A-Za-z]/.test(trimmed))) {
+        result.likeSupplement = `%${trimmed}%`;
       }
 
       return result;
