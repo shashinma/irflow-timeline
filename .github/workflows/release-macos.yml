@@ -116,6 +116,32 @@ jobs:
           echo "Universal binary verified:"
           lipo -info node_modules/better-sqlite3/build/Release/better_sqlite3.node
 
+      - name: Bundle external tools (Hayabusa + bmc-tools)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # hayabusa/ and tools/bmc-tools/ are .gitignored, so a fresh CI checkout has
+          # neither. electron-builder's extraResources would otherwise package nothing,
+          # shipping an app where Sigma (Hayabusa) scans and RDP Bitmap Cache silently
+          # fail / fall back to a network download (which breaks on TLS-intercepting
+          # corporate proxies). This step downloads + bundles both tools. The Hayabusa
+          # binary is built UNIVERSAL (arm64 + x86_64) via lipo inside the script.
+          npm run bundle:tools
+
+          # Fail loudly if the expected artifacts are missing — a silent miss here is
+          # exactly the regression that shipped a tool-less app in the first place.
+          echo "==> Verifying bundled tools"
+          test -f hayabusa/hayabusa || { echo "::error::hayabusa binary missing after bundle"; exit 1; }
+          test -d hayabusa/rules    || { echo "::error::hayabusa rules dir missing after bundle"; exit 1; }
+          test -f tools/bmc-tools/bmc-tools.py || { echo "::error::bmc-tools.py missing after bundle"; exit 1; }
+          echo "Hayabusa binary architectures:"
+          lipo -info hayabusa/hayabusa
+          # The mac target is universal; confirm the bundled binary is a fat Mach-O so the
+          # @electron/universal merge (covered by mac.x64ArchFiles) succeeds.
+          lipo -info hayabusa/hayabusa | grep -q "x86_64 arm64\|arm64 x86_64" \
+            || { echo "::error::hayabusa binary is not a universal (x86_64+arm64) fat binary"; exit 1; }
+          echo "Bundled Sigma rule count: $(find hayabusa/rules/sigma -name '*.yml' | wc -l | tr -d ' ')"
+
       - name: Build signed macOS release
         shell: bash
         run: |

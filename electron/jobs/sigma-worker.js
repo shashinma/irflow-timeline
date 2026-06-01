@@ -3,6 +3,12 @@ const { parentPort, workerData } = require("worker_threads");
 if (workerData?.userDataPath) {
   process.env.TLE_USER_DATA_PATH = workerData.userDataPath;
 }
+// process.resourcesPath is an Electron main-process augmentation — it is undefined in
+// worker threads. The JS Sigma rule cache needs it to locate the bundled Sigma rules
+// (hayabusa/rules/sigma) for offline seeding, so forward it from the spawning process.
+if (workerData?.resourcesPath) {
+  process.env.TLE_RESOURCES_PATH = workerData.resourcesPath;
+}
 
 const TimelineDB = require("../db");
 const { scanSigmaRules } = require("../analyzers/sigma");

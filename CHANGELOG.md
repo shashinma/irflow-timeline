@@ -38,7 +38,7 @@ A major release: IRFlow Timeline was rebuilt into ~150 focused modules and gaine
 
 ### First-Run Notes
 
-- The Sigma **Current Timeline Tab / EvtxECmd** scan downloads Sigma rules on first use (internet required); the **EVTX Folder** (Hayabusa) scan works offline out of the box — Hayabusa is bundled, no install or download needed.
+- **Sigma scans work fully offline out of the box.** Both the **EVTX Folder** (Hayabusa) and **Current Timeline Tab / EvtxECmd** (JS engine) scans use rules bundled inside the app — no install or network download is required (important on TLS-intercepting corporate/DFIR networks). When online, you can still refresh the JS Sigma rule set from SigmaHQ via the rule manager.
 - **RDP Bitmap Cache** requires **Python 3** installed on your machine.
 
 ## v1.0.5

@@ -470,12 +470,89 @@ function deduplicateRules(rules) {
 }
 
 /**
+ * Locate the Sigma rules bundled inside the Hayabusa resources, if present.
+ * process.resourcesPath is only defined in the Electron main process; worker threads
+ * receive it via TLE_RESOURCES_PATH (set by sigma-worker.js from workerData).
+ * @returns {string|null} absolute path to <resources>/hayabusa/rules/sigma, or null
+ */
+function getBundledSigmaRulesDir() {
+  const base = process.resourcesPath || process.env.TLE_RESOURCES_PATH;
+  if (!base) return null;
+  const dir = path.join(base, "hayabusa", "rules", "sigma");
+  try {
+    return fs.existsSync(dir) ? dir : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * One-time offline seed: when no rules have been downloaded yet, populate the cache
+ * from the bundled Hayabusa Sigma rule set so the JS Sigma engine works with no network
+ * access. Never clobbers an existing download. Idempotent — writes rules.json so the
+ * (expensive) directory parse runs at most once per cache.
+ *
+ * @param {Function} [onProgress] - (phase, detail) callback
+ * @returns {{ seeded: boolean, count: number, error?: string }}
+ */
+function seedBundledRulesIfEmpty(onProgress) {
+  const existing = readCachedRules();
+  if (existing && existing.length > 0) return { seeded: false, count: existing.length };
+
+  const bundledDir = getBundledSigmaRulesDir();
+  if (!bundledDir) return { seeded: false, count: 0 };
+
+  try {
+    onProgress?.("parsing", "First-time offline setup: loading bundled Sigma rules...");
+    const parsed = parseDirectoryDetailed(bundledDir);
+    const rules = annotateRules(parsed.rules);
+    if (rules.length === 0) return { seeded: false, count: 0 };
+
+    for (const r of rules) {
+      r._sourceRepo = "bundled";
+      r._sourceRepoName = "Bundled Sigma Rules";
+      r._sourceRepoRelativePath = r._filePath
+        ? path.relative(bundledDir, r._filePath).split(path.sep).join("/")
+        : (r._fileName || "");
+    }
+
+    writeCachedRules(rules);
+    const compatibilityReport = buildRuleCompatibilityReport(rules, parsed.report);
+    writeMeta({
+      lastUpdate: new Date().toISOString(),
+      source: "bundled",
+      repos: ["bundled"],
+      repoNames: ["Bundled Sigma Rules (offline)"],
+      ruleCount: rules.length,
+      ruleSnapshotHash: hashRules(rules),
+      compatibilityReport,
+      bundled: true,
+    });
+    dbg("SIGMA", `Seeded ${rules.length} Sigma rules from bundled Hayabusa rules (${bundledDir})`);
+    return { seeded: true, count: rules.length };
+  } catch (err) {
+    dbg("SIGMA", `Failed to seed bundled Sigma rules: ${err.message}`);
+    return { seeded: false, count: 0, error: err.message };
+  }
+}
+
+/**
  * Get all available rules: cached SigmaHQ + custom rules (deduplicated).
  *
  * @returns {{ rules: Array, meta: object|null, customCount: number }}
  */
 function getAllRules() {
-  const cachedRules = annotateRules(readCachedRules() || []);
+  // No downloaded rules yet → seed from the Sigma rules bundled inside the Hayabusa
+  // resources (offline-capable). TLS-intercepting corporate/DFIR networks block the
+  // GitHub rule download, which would otherwise leave the JS Sigma engine with zero
+  // rules ("No Sigma rules loaded"). The seed writes rules.json once, so this parse
+  // happens at most once per cache.
+  let cached = readCachedRules();
+  if (!cached || cached.length === 0) {
+    seedBundledRulesIfEmpty();
+    cached = readCachedRules();
+  }
+  const cachedRules = annotateRules(cached || []);
   const custom = loadCustomRulesDetailed();
   const customRules = custom.rules;
   // Mark custom rules
@@ -508,7 +585,7 @@ function getAllRules() {
  * Get cache status info for the UI.
  */
 function getCacheStatus() {
-  const meta = readMeta();
+  let meta = readMeta();
   const customDir = getCustomDir();
   let customCount = 0;
   try {
@@ -525,6 +602,9 @@ function getCacheStatus() {
   let ruleSnapshotHash = meta?.ruleSnapshotHash || null;
   try {
     const all = getAllRules();
+    // getAllRules() may have just seeded the cache from bundled rules (writing meta.json),
+    // so prefer the meta it returns over the snapshot read before the seed.
+    if (all.meta) meta = all.meta;
     compatibilityReport = all.compatibilityReport || compatibilityReport;
     ruleSnapshotHash = all.ruleSnapshotHash || ruleSnapshotHash;
   } catch (_) {}
@@ -553,5 +633,7 @@ module.exports = {
   getCacheDir,
   getCustomDir,
   getAvailableRepos,
+  getBundledSigmaRulesDir,
+  seedBundledRulesIfEmpty,
   SIGMA_REPOS,
 };

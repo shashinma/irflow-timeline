@@ -640,7 +640,7 @@ module.exports = function registerSigmaHandlers(safeHandle, safeSend, { db, next
         const { promise } = jobManager.startWorkerJob({
           type: "sigma-scan",
           worker: "sigma-worker.js",
-          workerData: { jobId: scanJobId, tabId, descriptor, userDataPath: app?.getPath?.("userData"), options: { ...opts, scanJobId } },
+          workerData: { jobId: scanJobId, tabId, descriptor, userDataPath: app?.getPath?.("userData"), resourcesPath: process.resourcesPath, options: { ...opts, scanJobId } },
           channels: { progress: "sigma-progress" },
           metadata: { tabId, scanJobId },
         });
