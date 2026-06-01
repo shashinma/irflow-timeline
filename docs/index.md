@@ -21,6 +21,9 @@ features:
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/><line x1="11" y1="8" x2="11" y2="14"/></svg>'
     title: 5 Search Modes
     details: Mixed, FTS, LIKE, Fuzzy, and Regex. Full-text search, substring matching, typo-tolerant fuzzy, and pattern matching across millions of rows.
+  - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(232,93,42,0.15)"/><path d="M9 12l2 2 4-4"/></svg>'
+    title: Sigma Detection
+    details: Dual-engine Sigma scanning — bundled Hayabusa over raw EVTX plus an in-app JS engine for imported timelines, with MITRE ATT&CK-mapped triage, custom rules, and persistent scan history.
   - icon: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#E85D2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v6"/><circle cx="12" cy="12" r="3"/><path d="M12 15v3"/><path d="M8 15l-3 3"/><path d="M16 15l3 3"/><path d="M5 18v2"/><path d="M12 18v2"/><path d="M19 18v2"/></svg>'
     title: Process Inspector
     details: Reconstruct process trees from Sysmon and Security logs with 4-tier threat scoring, 342 chain rules + 13 standalone patterns mapped to MITRE ATT&CK.
@@ -43,12 +46,12 @@ features:
 
 ## What's New
 
-- **Performance & Stability Hardening** — Stacking analytics now resolve in a single query (3x faster), CSV parsing rewritten with zero-copy field extraction, background index builds prioritize timestamp columns and cap concurrency to prevent memory exhaustion, empty column detection uses sampling instead of full-table scans, and exports are crash-safe if a tab closes mid-write
+- **Sigma Detection (dual engine)** — Rule-based detection built into the app via **Tools > Sigma Scan**: the bundled [Hayabusa](https://github.com/Yamato-Security/hayabusa) engine scans raw `.evtx` folders at full speed, while an in-app JS Sigma engine scans imported timelines and EvtxECmd output. Includes scan presets, custom rule collections, MITRE ATT&CK-mapped triage, noisy-rule suppression, and persistent scan history
+- **RDP Bitmap Cache** — New workflow wrapping ANSSI-FR [bmc-tools](https://github.com/ANSSI-FR/bmc-tools) to recover bitmap tiles from `bcache*.bmc` / `cache????.bin` artifacts, with a hashed, exportable evidence package
+- **Lateral Movement Tracker expansion** — New Accounts (per-identity scoring) and Exec Sessions (non-RDP movement) tabs, pair-based Incidents, multi-hop Campaign clustering, and a Telemetry Coverage panel
 - **NTFS Analysis Tools** — Six tools for raw `$MFT` and `$J` files: ransomware scanning, timestomping detection, file activity heatmaps, ADS analysis, USN Journal forensics with [UsnJrnl Rewind](https://cybercx.com.au/blog/ntfs-usnjrnl-rewind/) path reconstruction (11 categories), and resident data extraction for recovering deleted threat actor artifacts
 - **VirusTotal Integration** — Single and bulk IOC lookups with persistent cache, configurable rate limiting, color-coded verdict badges, and auto-tagging. Bulk lookups are now cancellable mid-retry and stop automatically if the window closes
 - **Auto-Update** — In-app update notifications with download progress and one-click install
-- **Analyst Profiles** — Suppressions and baselines for Process Inspector false-positive management
-- **Attack Pattern Detection** — Automated MITRE ATT&CK-mapped findings for brute force, password spray, credential compromise, Impacket (5 variants), and RMM tool scanning (33 tools + 7 tunnels)
 
 [Full changelog →](/about/changelog)
 
@@ -83,4 +86,4 @@ IRFlow Timeline uses a SQLite-backed architecture with streaming import, lazy in
 
 ### KAPE-Ready
 
-Automatic detection and pre-configuration for 24 KAPE tool output formats including MFTECmd, EvtxECmd, Hayabusa, Chainsaw, AmcacheParser, PECmd, RECmd, SBECmd, and more. Open your KAPE output and start analyzing immediately with optimized column layouts and color rules.
+Automatic detection and pre-configuration for 26 KAPE / EZ Tools output formats including MFTECmd, EvtxECmd, Hayabusa, Chainsaw, AmcacheParser, PECmd, RECmd, SBECmd, and more. Open your KAPE output and start analyzing immediately with optimized column layouts and color rules.

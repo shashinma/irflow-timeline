@@ -4,6 +4,43 @@ description: IRFlow Timeline changelog — version history, new features, perfor
 
 # Changelog
 
+## v1.0.6 — June 1, 2026
+
+### New Features
+
+- **Sigma Detection (dual engine)** — Rule-based detection built directly into the app, accessible from **Tools > Sigma Scan**
+  - **Hayabusa engine** — the bundled Hayabusa binary scans raw `.evtx` folders at full speed; self-updating rule set with in-app binary/rule maintenance
+  - **In-app JS Sigma engine** — compiles Sigma detection YAML to a JS predicate and scans imported data (current tab) or EvtxECmd CSV/XLS/XLSX output when raw `.evtx` is unavailable
+  - Three scan targets: EVTX Folder (Hayabusa), EvtxECmd Output Files (JS Sigma), and Current Timeline Tab (JS Sigma) with automatic format detection (EvtxECmd / Hayabusa / raw EVTX / CSV)
+  - Detection profile with scan presets (Fast high-confidence, Full hunt, Critical/high only) plus custom saveable presets, severity/status filters, and JS Sigma rule-category selection
+  - Hayabusa rule sets: Core, Core+, Core++, Emerging Threats, Threat Hunting, All; output profiles (minimal → super-verbose, Timesketch) and CSV/JSON/JSONL modes
+  - Scan options: record recovery, UTC, proven-only, noisy/deprecated/unsupported toggles, EID filter, `-A`/`-a`, GeoIP enrichment (MaxMind GeoLite2 auto-download), and include/exclude filters for MITRE tags, computers, and Event IDs
+  - **Triage dashboard** ("Look Here First") with priority findings, MITRE ATT&CK technique/tactic badges, affected/rare host-user-process panels, per-rule reviewed/false-positive state, and Open Exact Hits / Tag / Bookmark actions
+  - **Disabled / Noisy Rules** suppression manager (global + case-specific, synced to Hayabusa `noisy_rules.txt`), compatibility rule downloads, and custom YAML rule import
+  - Raw-EVTX triage tools (log metrics, computers, event IDs, logons, pivot IOCs, Base64 decode) and a keyword/regex EVTX search utility
+  - Persistent scan history with reopenable results; cancellable scans
+
+- **RDP Bitmap Cache** — New **Tools > RDP Bitmap Cache** workflow wrapping ANSSI-FR `bmc-tools`
+  - Recovers bitmap tiles and collages from `bcache*.bmc` / `cache????.bin` Windows profile artifacts
+  - Preflight summary (cache file count, size, detected profiles), recursive directory scanning, and image preview
+  - Exportable evidence package with `manifest.json`, source/output SHA-256 hashes, copied images, and recorded command line
+
+- **Lateral Movement Tracker expansion** — Seven sub-tabs and operator-centric triage
+  - **Accounts** tab — per-identity aggregation with suspicion scoring, PRIV/ADMIN/MACHINE/SERVICE/USER classification, and per-row pivots (created even from Kerberos-only DC events)
+  - **Exec Sessions** tab — first-class non-RDP lateral movement (WMI, WinRM, PsExec, Impacket, remote services, scheduled tasks, admin shares, RMM, Cobalt Strike) with Table and Timeline (Gantt) views
+  - **Incidents** — pair-based grouping of findings within a 30-minute window
+  - **Campaigns** — multi-hop storyline clustering across shared host/user within 2 hours, with hop-path breadcrumbs and auto-generated narratives
+  - **Telemetry Coverage** panel surfacing present event categories and detections gated by missing data
+
+### Architecture
+
+- **Codebase refactor (v1.0.5 → v1.0.6)** — The monolithic `App.jsx` and `electron/parser.js` were decomposed into ~200 focused modules across the renderer and main process: per-format `parsers/`, per-domain `ipc/` handlers, `worker_threads`-backed `jobs/`, and modular `analyzers/` (sigma, lateral-movement, process-tree, persistence, rdp-bitmap-cache, network)
+- **External tools bundling** — `npm run bundle:tools` now bundles both Hayabusa and `bmc-tools` as `extraResources`
+
+### UI Improvements
+
+- **Tools menu restructure** — Reorganized into Analysis, Detection (Sigma Scan), Platforms (Windows tools, with Linux/macOS/Cloud teasers), and Export sections
+
 ## v1.0.5 — March 17, 2026
 
 ### New Features

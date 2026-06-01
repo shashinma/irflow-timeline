@@ -1,5 +1,5 @@
 ---
-description: KAPE integration — auto-detect and pre-configure display settings for 15+ KAPE and EZ Tools output formats.
+description: KAPE integration — auto-detect and pre-configure display settings for 26 KAPE and EZ Tools output formats.
 ---
 
 # KAPE Integration

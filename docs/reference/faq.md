@@ -23,6 +23,7 @@ IRFlow Timeline has been tested with files exceeding **30 GB** and **150 million
 IRFlow Timeline is inspired by Eric Zimmerman's Timeline Explorer but adds capabilities beyond a data viewer:
 
 - Runs natively on macOS (Intel and Apple Silicon)
+- Dual-engine Sigma detection (Hayabusa + in-app JS Sigma)
 - Process Inspector with MITRE ATT&CK detection rules
 - Lateral Movement Tracker with interactive network graphs
 - Persistence Analyzer scanning 30+ techniques
@@ -31,9 +32,13 @@ IRFlow Timeline is inspired by Eric Zimmerman's Timeline Explorer but adds capab
 - Log Source Coverage heatmap
 - Handles 30GB+ files via SQLite streaming (no row limits)
 
+### Does it run Sigma rules?
+
+Yes. **Tools > Sigma Scan** provides a dual-engine detection workflow. The bundled [Hayabusa](https://github.com/Yamato-Security/hayabusa) engine scans folders of raw `.evtx` files at full speed, and an in-app JavaScript Sigma engine scans data you have already imported (the current tab) or EvtxECmd CSV/XLS/XLSX output when raw EVTX is unavailable. It supports scan presets, custom rule collections, noisy-rule suppression, GeoIP enrichment, and a MITRE ATT&CK-mapped triage dashboard with persistent scan history. See [Sigma Detection](/features/sigma-detection) for the full workflow.
+
 ### Does it support KAPE output?
 
-Yes. IRFlow Timeline auto-detects 15+ KAPE tool profiles including MFTECmd, EvtxECmd, PECmd, AmcacheParser, RECmd, SBECmd, AppCompatCacheParser, JLECmd, LECmd, SrumECmd, Hayabusa, and Chainsaw. Columns are automatically pinned, ordered, and formatted for each profile. See [KAPE Integration](/workflows/kape-integration) and [KAPE Profiles](/reference/kape-profiles) for details.
+Yes. IRFlow Timeline auto-detects 26 KAPE / EZ Tools profiles including MFTECmd, EvtxECmd, PECmd, AmcacheParser, RECmd, SBECmd, AppCompatCache, JLECmd, LECmd, SrumECmd, Hayabusa, and Chainsaw. Columns are automatically pinned, ordered, and formatted for each profile. See [KAPE Integration](/workflows/kape-integration) and [KAPE Profiles](/reference/kape-profiles) for details.
 
 ---
 

@@ -15,6 +15,12 @@ const config = {
   mac: {
     category: "public.app-category.developer-tools",
     icon: "assets/icon.icns",
+    // The bundled Hayabusa binary (extraResources) is a universal (arm64+x86_64)
+    // Mach-O, identical in both the x64 and arm64 sub-builds. @electron/universal
+    // refuses to merge an identical Mach-O unless it's explicitly allowed here, so
+    // this tells it to copy the (already-fat) binary through as-is. Without this the
+    // universal build fails with "not covered by the x64ArchFiles rule".
+    x64ArchFiles: "**/hayabusa/hayabusa",
     target: [
       {
         target: "dmg",
@@ -44,6 +50,18 @@ const config = {
     "dist/**/*",
     "electron/**/*",
     "assets/**/*",
+  ],
+  extraResources: [
+    {
+      from: "hayabusa",
+      to: "hayabusa",
+      filter: ["**/*", "!logs/**"],
+    },
+    {
+      from: "tools/bmc-tools",
+      to: "tools/bmc-tools",
+      filter: ["**/*"],
+    },
   ],
   asarUnpack: [
     "node_modules/better-sqlite3/**",

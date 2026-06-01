@@ -174,7 +174,15 @@ The graph legend is draggable — click and drag to reposition it. It shows all 
 - **Redraw** — re-run the force layout algorithm
 - **Find Flagged** — cycle through outlier/suspicious hosts (appears when flagged hosts exist)
 
-## Five Sub-Tabs
+## Telemetry Coverage Panel
+
+Above the sub-tabs the tracker shows a **Telemetry Coverage** panel that summarizes which event categories are present in the current dataset and which detections are gated by missing data. Categories: Auth (Logon), Explicit Creds, Process Creation, Service Install, Scheduled Task, RDP Session, Share Access, Kerberos, NTLM. Each category turns green when at least one event of that type is present and grey when absent. A coverage warning list highlights detections that cannot run because their feeder events are missing — for example, "No Kerberos service ticket events (4769) — Kerberoasting detection unavailable".
+
+Click any host in the Network Graph to see that host's individual telemetry coverage and identify which hops in a chain have the weakest evidence.
+
+## Sub-Tabs
+
+The tracker has seven sub-tabs (Exec Sessions and Findings only appear when detections are present). The UI tab order is: **Network Graph**, **RDP Sessions**, **Accounts**, **Chains**, **Exec Sessions**, **Connections**, **Findings**. The sections below describe each tab; numbering is independent of the UI ordering.
 
 ### 1. Network Graph
 
@@ -226,6 +234,24 @@ Each finding card has two action buttons:
 
 - **Filter Events** — closes the modal and applies targeted filters to the main grid: sets a checkbox filter on Event ID with relevant IDs for the finding category, sets a date range filter padded +/-5 minutes around the finding's time range, and clears other filters to avoid interference
 - **View in Graph** — switches to the Graph tab and zooms/selects the relevant edge
+
+#### Incidents
+
+Pair-based incidents group 2+ findings on the same source-target pair within a 30-minute window. Each incident shows severity, triage score, MITRE techniques, narrative, and member findings. Actions: **Show in Timeline**, **View in Graph**, **Copy IOC**.
+
+#### Campaigns
+
+Campaign clustering rolls up pair-based incidents into multi-hop storylines. Two incidents join the same campaign when they share a **host** (hop continuity) or a **user** (same operator) and are within **2 hours** of each other. Connected-component analysis then groups the entire operator storyline into a single campaign.
+
+Each campaign card shows:
+
+- Severity, triage score, incident/finding/event counts
+- **Hop path** — visual breadcrumb of the movement chain (e.g. `WKS01 → SRV01 → DC01`)
+- Auto-generated narrative summarizing the operator's activity
+- User and technique pills
+- Expandable detail with member incidents (clickable to navigate to Incidents view), movement path visualization, **Show in Timeline**, **View in Graph**, **View Incidents**, and **Copy Summary**
+
+Campaigns only appear when 2+ incidents exist that share context. This is the highest-level view for operator/campaign-centric triage.
 
 ### 3. Chains
 
@@ -299,7 +325,26 @@ The engine processes all RDP-related events chronologically, linking them into s
 - **Checkbox selection** — select sessions for copy operations
 - **Copy** — exports selected or all sessions as tab-separated text
 
-### 5. Connections
+### 5. Exec Sessions
+
+The Execution Sessions tab provides a first-class view of non-RDP lateral movement — WMI, WinRM, PsExec, Impacket, remote service installs, scheduled tasks, admin share access, RMM tools, and Cobalt Strike activity. It mirrors the RDP Sessions tab in interaction model but shows execution-specific data.
+
+Sessions are built from findings: the analyzer clusters execution-tool findings by (technique, source-target pair, user, time-window) so each session represents a distinct operator action. Sessions inherit severity, triage scores, evidence pills, and user attribution from their underlying findings.
+
+**Columns:** Score, Severity, Technique, Source, Target, User(s), Findings, Events, Start, End, Status (EXECUTED or OBSERVED).
+
+**View modes:**
+
+- **Table** (default) — sortable table with expandable row detail. Expanded detail shows evidence pills, session metadata, and clickable related findings that navigate to the Findings tab.
+- **Timeline** — Gantt chart with technique-colored bars positioned proportionally within the global time range. Each bar is clickable (switches to table view with that session expanded). A legend maps technique to color.
+
+**Actions per session:**
+
+- **Timeline** — closes modal and filters the main grid to the session's EIDs, hosts, and time window.
+- **Graph** — switches to the Network Graph tab and highlights the source-target edge.
+- **Copy All / Export CSV** — toolbar buttons for clipboard and file export.
+
+### 6. Connections
 
 ![Lateral Movement Tracker Connections tab showing tabular view of all source-target-user-logon type pairs with event counts](/dfir-tips/Lateral-Movement-Connections.png)
 
@@ -312,6 +357,56 @@ A tabular view of all connections with full details:
 | User | Account used |
 | Logon Type | Windows logon type |
 | Count | Number of events |
+
+### 7. Accounts
+
+The Accounts tab pivots the analysis from connections (host→host edges) to identities (per-user aggregates). Every distinct user the tracker observed across the dataset gets one row, scored and classified to surface the identities most likely to need triage.
+
+Each account is built from four data sources:
+
+1. **Logon graph events** — every 4624/4625/4634/4647/4648/4672/4769/4776/4778/4779 row with a parseable user contributes source/target hosts, logon types, success/failure counts, and first/last seen.
+2. **RDP session correlation** — RDP-specific stats (concurrent sessions, admin sessions, failed/reconnect counts) come from the Sessions correlator.
+3. **Findings** — any finding that names this user adds its `id` and `category` to the account's findingIds / findingCategories.
+4. **Raw per-user event counts** — Kerberos (4768/4769/4771), NTLM (4776), explicit credentials (4648), and admin privilege (4672) counts. Crucially, accounts are **created** from this source even if they never produced a graph edge — so a domain account that appears only in DC Kerberos events still surfaces in the tab.
+
+**Columns**
+
+| Column | Description |
+|--------|-------------|
+| Score | Suspicion score 0–100. Color-coded: red ≥50, orange ≥25, yellow ≥10. |
+| User | Username (DOMAIN prefix stripped). |
+| Class | Classification pill: PRIV, ADMIN, MACHINE, SERVICE, USER. |
+| Successes | Count of successful logons (4624). |
+| Failures | Count of failed logons (4625). |
+| Sources | Number of distinct source hosts the account touched. |
+| Targets | Number of distinct target hosts. |
+| Admin | Count of 4672 (admin privilege assigned) events. |
+| Kerb | Combined 4768 + 4769 + 4771 count. |
+| NTLM | Count of 4776 events. |
+| Explicit | Count of 4648 explicit credential use events. |
+| First Seen / Last Seen | Time bounds for this account's activity. |
+| Why Suspicious | Pills summarizing the analyzer's `flags[]` for the account. |
+
+**Suspicion scoring** combines admin privilege use, failures-before-first-success, concurrent RDP, explicit credential use, target diversity, finding references, outlier source hits, NTLM-only authentication, privileged naming, and RDP-suspicion contribution. Machine accounts and well-known service accounts are dampened unless they have admin privilege or finding references.
+
+**Classification tiers** (highest precedence first):
+
+- **PRIV** (red) — name matches privileged-name regex (`Administrator`, `Admin`, `Root`, `DA_`, `Domain Admin`, `Enterprise Admin`, `Schema Admin`, `Backup`)
+- **ADMIN** (orange) — has 4672 events or admin RDP sessions
+- **MACHINE** (gray) — username ends in `$`
+- **SERVICE** (purple) — name matches service-account regex (`SVC_`, `SERVICE_`, etc.)
+- **USER** (green) — none of the above
+
+**Features**
+
+- **Click-to-sort** on every header. Default sort is Score descending.
+- **Copy All** exports the visible (sorted) rows as TSV including the header row.
+- **Per-row actions** — each account row has inline pivot buttons:
+  - **Findings (N)** — navigates to the Findings tab showing detections involving this user. Only appears when the user has linked findings.
+  - **Timeline** — closes the modal and filters the main grid to logon events (4624/4625/4648/4768/4769/4776) for this user within their first-to-last-seen window.
+  - **Graph** — switches to the Network Graph tab and highlights the first edge involving this user.
+- **Empty-state hint** points back at the Telemetry Coverage panel when no accounts can be extracted from the dataset.
+- The **Users** stats card above the tabs is the entry point — click it to jump straight here. The card sub-chip shows how many of the surfaced accounts have a suspicion score of ≥25.
 
 ## Outlier and Suspicious Host Detection
 

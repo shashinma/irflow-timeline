@@ -58,7 +58,7 @@ export default defineConfig({
       { text: 'Reference', link: '/reference/keyboard-shortcuts' },
       { text: 'Author', link: '/about/author' },
       {
-        text: 'v1.0.5',
+        text: 'v1.0.6',
         items: [
           { text: 'Changelog', link: '/about/changelog' },
           { text: 'Roadmap', link: '/about/roadmap' },
@@ -74,6 +74,7 @@ export default defineConfig({
           items: [
             { text: 'Interactive Demo', link: '/getting-started/demo' },
             { text: 'Installation', link: '/getting-started/installation' },
+            { text: 'Auto-Update', link: '/getting-started/auto-update' },
             { text: 'Quick Start', link: '/getting-started/quick-start' },
             { text: 'Supported Formats', link: '/getting-started/supported-formats' },
             { text: 'Architecture', link: '/getting-started/architecture' }
@@ -95,9 +96,11 @@ export default defineConfig({
           text: 'Analytics',
           items: [
             { text: 'Histogram', link: '/features/histogram' },
+            { text: 'Sigma Detection', link: '/features/sigma-detection' },
             { text: 'Process Inspector', link: '/features/process-tree' },
             { text: 'Analyst Profiles', link: '/features/analyst-profiles' },
             { text: 'Lateral Movement Tracker', link: '/features/lateral-movement' },
+            { text: 'RDP Bitmap Cache', link: '/features/rdp-bitmap-cache' },
             { text: 'Persistence Analyzer', link: '/features/persistence-analyzer' },
             { text: 'Gap & Burst Analysis', link: '/features/gap-burst-analysis' },
             { text: 'IOC Matching', link: '/features/ioc-matching' },

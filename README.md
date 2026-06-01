@@ -14,6 +14,7 @@ Inspired by Eric Zimmerman's Timeline Explorer for Windows.
 - **VirusTotal Enrichment** — IOC matching with bulk VT lookups, malware family extraction, verdict badges, relationship pivoting, and local caching
 - **Process Inspector** — Parent-child process tree analysis with 340+ MITRE ATT&CK detection rules
 - **Lateral Movement Tracker** — Network logon and RDP session visualization as interactive force-directed graphs
+- **RDP Bitmap Cache Recovery** — Recover `bcache*.bmc` and `cache????.bin` artifacts with bundled bmc-tools, preview images, and export evidence packages
 - **Persistence Analyzer** — 30+ persistence techniques with account chain detection, cross-technique correlation, and PowerShell 4104 script block reassembly
 - **IOC Matching** — 17+ indicator categories with auto-defanging, inline highlighting, CSV/HTML export with VT enrichment data
 
@@ -63,6 +64,7 @@ Inspired by [Eric Zimmerman's Timeline Explorer](https://ericzimmerman.github.io
 | **Vite** | Build tooling and hot-reload | [vitejs/vite](https://github.com/vitejs/vite) |
 | **VitePress** | Documentation site | [vuejs/vitepress](https://github.com/vuejs/vitepress) |
 | **electron-builder** | macOS DMG packaging | [electron-userland/electron-builder](https://github.com/electron-userland/electron-builder) |
+| **bmc-tools** | RDP Bitmap Cache recovery | [ANSSI-FR/bmc-tools](https://github.com/ANSSI-FR/bmc-tools) |
 
 ### DFIR Community
 

@@ -85,10 +85,17 @@ Click the **histogram toggle** button in the toolbar to open the timeline visual
 - Click and drag to brush-select a time range — the grid filters automatically
 - Color-coded by artifact source when using merged timelines
 
+## Run a Detection Scan
+
+Open the **Tools** menu to run analysis. Tools are grouped into **Analysis** (Stack Values, Gap Analysis, Log Sources, Burst Detection), **Detection** (Sigma Scan), **Platforms** (Process Inspector, Lateral Movement Tracker, Persistence Analyzer, RDP Bitmap Cache, and raw `$MFT`/`$J` NTFS tools), and **Export** (Generate Report).
+
+For a fast first pass, choose **Tools > Sigma Scan**. Point it at a folder of raw `.evtx` files (bundled Hayabusa engine) or at your current timeline tab (in-app JS Sigma engine), pick the **Fast high-confidence only** preset, and run — findings open in a MITRE ATT&CK-mapped triage dashboard. See [Sigma Detection](/features/sigma-detection) for the full workflow.
+
 ## Next Steps
 
 - Learn about all [search modes and filters](/features/search-filtering)
 - Set up [color rules](/features/color-rules) for visual pattern matching
+- Run rule-based detection with [Sigma Detection](/features/sigma-detection)
 - Explore the [Process Inspector](/features/process-tree) for Sysmon analysis
 - Track lateral movement with the [Lateral Movement Tracker](/features/lateral-movement)
 - Configure [KAPE integration](/workflows/kape-integration) for auto-detection

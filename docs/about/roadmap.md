@@ -22,11 +22,6 @@ This page outlines the planned direction for IRFlow Timeline. Priorities may shi
 - **Windows** and **Linux** builds to make IRFlow Timeline available beyond macOS
 - Platform-specific packaging (MSI/EXE for Windows, AppImage/deb for Linux)
 
-### Sigma Rule Integration
-- Import and match Sigma detection rules against event log timelines
-- Map Sigma rule hits to MITRE ATT&CK techniques alongside existing detections
-- Support for custom Sigma rule collections
-
 ### Timeline Diffing
 - Compare two timelines or sessions side by side
 - Highlight events present in one timeline but not the other
@@ -53,16 +48,15 @@ This page outlines the planned direction for IRFlow Timeline. Priorities may shi
 - Native parsing of Azure AD sign-in logs, AWS CloudTrail, GCP audit logs
 - Unified authentication timeline across on-prem and cloud environments
 
-### Network Traffic Integration
-- Zeek/Bro log ingestion for network-level correlation
-- Merge network and host timelines for full-stack visibility
-
 ---
 
 ## Recently Completed
 
 See the [Changelog](/about/changelog) for detailed release notes on everything shipped so far. Highlights from recent releases:
 
+- **Sigma Detection** — Dual JS Sigma + Hayabusa engine scanning raw EVTX, EvtxECmd output, and imported timelines, with custom rule collections, MITRE ATT&CK mapping, a triage dashboard, noisy-rule suppression, and persistent scan history
+- **RDP Bitmap Cache** — ANSSI-FR `bmc-tools` integration to recover bitmap tiles from `bcache*.bmc` / `cache????.bin` artifacts with an exportable, hashed evidence package
+- **Lateral Movement expansion** — Accounts and Exec Sessions tabs, pair-based Incidents, multi-hop Campaign clustering, and a Telemetry Coverage panel
 - **Auto-Update** — In-app update notifications with download progress, one-click install, and automatic startup checks
 - **NTFS Analysis Tools** — Raw `$MFT` and `$J` (USN Journal) import with six analysis tools: Ransomware Analysis (with PDF export), Timestomping Detection, File Activity Heatmap, ADS Analyzer, USN Journal Analysis with [UsnJrnl Rewind](https://cybercx.com.au/blog/ntfs-usnjrnl-rewind/) path reconstruction (11 categories), and Resident Data Extraction for recovering deleted threat actor artifacts
 - **VirusTotal Integration** — API key configuration, single and bulk IOC lookups, persistent SQLite cache with configurable TTL, rate limiting, color-coded verdict badges, and auto-tagging

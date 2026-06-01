@@ -68,6 +68,16 @@ description: Keyboard shortcuts reference for IRFlow Timeline — file operation
 |----------|--------|
 | `Cmd+H` | Toggle histogram |
 
+Analysis tools are grouped under the **Tools** menu in four sections: **Analysis** (Stack Values, Gap Analysis, Log Sources, Burst Detection), **Detection** (Sigma Scan), **Platforms** (Process Inspector, Lateral Movement Tracker, Persistence Analyzer, RDP Bitmap Cache, and the raw $MFT/$J NTFS tools), and **Export** (Generate Report).
+
+## Help
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+/` | Open Keyboard Shortcuts |
+
+The **Help** menu also includes Quick Help, **Check for Updates…**, Website, and About IRFlow Timeline.
+
 ## General
 
 | Shortcut | Action |

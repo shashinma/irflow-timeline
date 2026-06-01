@@ -55,6 +55,8 @@ npm run dist:dmg
 npm run dist:universal
 ```
 
+Release build commands automatically bundle external analyzer tools used by IRFlow Timeline, including Hayabusa and ANSSI-FR `bmc-tools`.
+
 ### Build Script
 
 The project includes an interactive `build.sh` script with multiple options:

@@ -188,6 +188,18 @@ Native binary parsing of raw NTFS USN Journal (`$UsnJrnl:$J`) files. Provides a 
 | `UpdateReasons` | Decoded reason flags (e.g., `DataOverwrite\|Close`) |
 | `FileAttributes` | Decoded file attributes |
 
+## RDP Bitmap Cache Artifacts
+
+**Filenames:** `bcache*.bmc`, `cache????.bin`
+
+RDP Bitmap Cache files are handled through **Tools > RDP Bitmap Cache** rather than the normal timeline importer. The analyzer recovers bitmap tiles and collages with `bmc-tools`, records source/output hashes, keeps previous extraction history, and can export an evidence package for reporting.
+
+Use this workflow for Windows profile artifacts under paths such as:
+
+```text
+Users\<user>\AppData\Local\Microsoft\Terminal Server Client\Cache
+```
+
 ## Format Detection
 
 IRFlow Timeline determines the file format by extension and content detection:

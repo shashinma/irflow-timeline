@@ -7,9 +7,16 @@ release/
 .DS_Store
 docs/.vitepress/dist
 docs/.vitepress/cache
+docs/.vitepress/.temp
 CLAUDE.md
 .env*
 *.pem
 *.key
 *.pfx
 *.p12
+hayabusa/
+tools/bmc-tools/
+.claude/
+*.bak
+*.code-workspace
+electron/analyzers/network/

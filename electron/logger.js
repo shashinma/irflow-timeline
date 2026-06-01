@@ -40,7 +40,10 @@ function _flushLogSync() {
   _logBuf = [];
 }
 
-setInterval(_flushLog, 2000);
+// unref() so the flush timer never blocks process shutdown — critical for tests
+// running under `node --test`, and harmless in Electron where the main process
+// exits via app.quit().
+setInterval(_flushLog, 2000).unref();
 process.on("exit", _flushLogSync);
 
 module.exports = { dbg, debugLogPath };
