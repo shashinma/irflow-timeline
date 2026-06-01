@@ -183,10 +183,36 @@ jobs:
           tag="${GITHUB_REF_NAME}"
           version="${tag#v}"
 
-          if ! gh release view "${tag}" >/dev/null 2>&1; then
+          # Build the release body from CHANGELOG.md: the section under "## v<version>"
+          # (or "## <version>") up to the next "## " heading. Falls back to a generic
+          # note if CHANGELOG.md is missing or has no matching section.
+          notes_file="$(mktemp)"
+          if [ -f CHANGELOG.md ]; then
+            awk -v ver="${version}" '
+              /^## / {
+                if (grab) exit
+                line=$0
+                sub(/^## v?/, "", line)
+                sub(/[^0-9.].*$/, "", line)
+                if (line == ver) { grab=1; next }
+              }
+              grab { print }
+            ' CHANGELOG.md > "${notes_file}"
+          fi
+          if ! grep -q '[^[:space:]]' "${notes_file}" 2>/dev/null; then
+            printf 'Automated macOS release for %s.\n' "${tag}" > "${notes_file}"
+            echo "::warning::No CHANGELOG.md section for ${version}; using generic release notes."
+          fi
+
+          # Create or UPDATE the release so re-runs refresh the notes too.
+          if gh release view "${tag}" >/dev/null 2>&1; then
+            gh release edit "${tag}" \
+              --title "IRFlow Timeline ${version}" \
+              --notes-file "${notes_file}"
+          else
             gh release create "${tag}" \
               --title "IRFlow Timeline ${version}" \
-              --notes "Automated macOS release for ${tag}."
+              --notes-file "${notes_file}"
           fi
 
           gh release upload "${tag}" \
