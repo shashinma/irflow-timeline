@@ -117,6 +117,11 @@ jobs:
           lipo -info node_modules/better-sqlite3/build/Release/better_sqlite3.node
 
       - name: Bundle external tools (Hayabusa + bmc-tools)
+        env:
+          # Authenticate the Hayabusa release-API lookup so the bundle script isn't
+          # throttled by GitHub's 60/hr unauthenticated rate limit on shared runner IPs.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail

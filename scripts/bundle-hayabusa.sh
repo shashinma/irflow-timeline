@@ -26,9 +26,29 @@ if [ "$VERSION" = "latest" ]; then
 else
   RELEASE_URL="https://api.github.com/repos/Yamato-Security/hayabusa/releases/tags/$VERSION"
 fi
+
+# Use the GitHub token when present (CI). Unauthenticated API requests are rate-limited
+# to 60/hr per IP, and on shared GitHub Actions runner IPs that limit is routinely
+# exhausted — the throttled response is a JSON error body with no 'tag_name', which used
+# to fail here with a cryptic Python KeyError. An Actions GITHUB_TOKEN raises the limit
+# to 1000/hr. Only the API metadata call is authenticated; asset downloads use the
+# public browser_download_url and need no auth.
+GH_API_ARGS=(-sL -H "Accept: application/vnd.github+json")
+GH_TOKEN_VALUE="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+if [ -n "$GH_TOKEN_VALUE" ]; then
+  GH_API_ARGS+=(-H "Authorization: Bearer $GH_TOKEN_VALUE")
+  echo "==> Using authenticated GitHub API requests"
+fi
+
 echo "==> Fetching release info from $RELEASE_URL"
-RELEASE_JSON=$(curl -sL "$RELEASE_URL")
-TAG=$(echo "$RELEASE_JSON" | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])")
+RELEASE_JSON=$(curl "${GH_API_ARGS[@]}" "$RELEASE_URL")
+TAG=$(printf '%s' "$RELEASE_JSON" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('tag_name','') if isinstance(d, dict) else '')" 2>/dev/null || true)
+if [ -z "$TAG" ]; then
+  echo "ERROR: GitHub release API did not return a tag_name (rate-limited or error response)."
+  echo "       First 500 bytes of the response:"
+  printf '%s\n' "$RELEASE_JSON" | head -c 500; echo
+  exit 1
+fi
 echo "==> Release: $TAG"
 
 # Portable SHA-256 helper (shasum on macOS, sha256sum on most Linux)
