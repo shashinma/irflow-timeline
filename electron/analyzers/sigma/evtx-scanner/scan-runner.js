@@ -11,6 +11,28 @@ const {
   downloadHayabusa,
   getHayabusaStatus,
 } = require("./binary-manager");
+
+// Resolve the Hayabusa binary path, downloading only if there is genuinely no bundled
+// copy. The download path must be the last resort because it fails on TLS-intercepting
+// corporate proxies (common in DFIR/enterprise). Resolution order:
+//   1. findHayabusa() — userData copy or bundled binary (covers 99% of installs)
+//   2. Direct bundled binary at process.resourcesPath (covers packaged app edge cases
+//      where the userData copy failed but the extraResource is still executable)
+//   3. downloadHayabusa() — only if both above return nothing
+async function resolveHayabusaBin(onProgress) {
+  let binPath = findHayabusa();
+  if (binPath) return binPath;
+  try {
+    const bundled = path.join(process.resourcesPath, "hayabusa",
+      process.platform === "win32" ? "hayabusa.exe" : "hayabusa");
+    if (fs.existsSync(bundled)) {
+      try { fs.chmodSync(bundled, 0o755); } catch {}
+      return bundled;
+    }
+  } catch {}
+  onProgress?.({ phase: "installing", text: "Downloading Hayabusa..." });
+  return downloadHayabusa(onProgress);
+}
 const {
   createScanOutputPaths,
   buildScanCommand,
@@ -358,11 +380,7 @@ async function scanEvtxDirectory(dirPath, db, nextTabId, options = {}, onProgres
 }
 
 async function runHayabusaCommand(subcommand, dirPath, extraArgs = [], onProgress) {
-  let binPath = findHayabusa();
-  if (!binPath) {
-    onProgress?.({ phase: "installing", text: "Downloading Hayabusa..." });
-    binPath = await downloadHayabusa(onProgress);
-  }
+  const binPath = await resolveHayabusaBin(onProgress);
 
   const tmpBase = path.join(os.tmpdir(), `tle-hb-${subcommand}-${Date.now()}.csv`);
   const args = buildGenericCommand(subcommand, dirPath, tmpBase, extraArgs);
@@ -467,11 +485,7 @@ async function runSearch(dirPath, searchOpts = {}, onProgress) {
 }
 
 async function runPivotKeywords(dirPath, onProgress) {
-  let binPath = findHayabusa();
-  if (!binPath) {
-    onProgress?.({ phase: "installing", text: "Downloading Hayabusa..." });
-    binPath = await downloadHayabusa(onProgress);
-  }
+  const binPath = await resolveHayabusaBin(onProgress);
 
   const tmpBase = path.join(os.tmpdir(), `tle-hb-pivot-${Date.now()}.csv`);
   const pivotArgs = ["pivot-keywords-list", "-d", dirPath, "-o", tmpBase, "-q", "--no-wizard", "-m", "high"];

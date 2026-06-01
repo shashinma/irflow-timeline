@@ -39,10 +39,20 @@ function ensureWritableHayabusa() {
   if (!fs.existsSync(bundledBin)) return null;
 
   dbg("HAYABUSA", `Copying bundled Hayabusa to writable location: ${userDir}`);
-  if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
-  copyDirectoryContents(bundledDir, userDir);
+  try {
+    if (!fs.existsSync(userDir)) fs.mkdirSync(userDir, { recursive: true });
+    copyDirectoryContents(bundledDir, userDir);
+  } catch (err) {
+    // A failed/partial copy must NOT make Hayabusa look uninstalled (which would push
+    // the user into a network download). Remove the partial dir and return null so
+    // findHayabusa() falls back to running the bundled binary in place.
+    dbg("HAYABUSA", "bundled->writable copy failed; will use bundled binary in place", { err: err?.message });
+    try { fs.rmSync(userDir, { recursive: true, force: true }); } catch {}
+    return null;
+  }
   try { fs.chmodSync(userBin, 0o755); } catch {}
-  ensureDefaultNoisyRules(userBin);
+  try { ensureDefaultNoisyRules(userBin); } catch {}
+  if (!fs.existsSync(userBin)) return null;
   return userBin;
 }
 
@@ -98,21 +108,24 @@ function findHayabusa() {
     } catch {}
   }
 
+  // Bundled binary (extraResources) — always preferred for fresh installs. Ships
+  // inside the .app so no network/copy is required. ensureWritableHayabusa() copies
+  // it to a writable userData location so Hayabusa can write its own config; if that
+  // copy fails (permissions, disk space, corporate write-restrictions) we fall back to
+  // running the bundled binary in place rather than reporting "not installed" and
+  // pushing the user into a network download (which fails on TLS-intercepting proxies).
   try {
     const bundledAppBin = path.join(process.resourcesPath, "hayabusa", binName);
     if (fs.existsSync(bundledAppBin)) {
       const writable = ensureWritableHayabusa();
       if (writable) return writable;
-      try {
-        fs.accessSync(bundledAppBin, fs.constants.X_OK);
-        return bundledAppBin;
-      } catch {}
-      try {
-        fs.chmodSync(bundledAppBin, 0o755);
-        return bundledAppBin;
-      } catch {}
+      // Copy failed or skipped — use the bundled binary directly.
+      try { fs.accessSync(bundledAppBin, fs.constants.X_OK); return bundledAppBin; } catch {}
+      try { fs.chmodSync(bundledAppBin, 0o755); return bundledAppBin; } catch {}
     }
-  } catch {}
+  } catch (err) {
+    dbg("HAYABUSA", "bundled binary lookup failed", { err: err?.message });
+  }
 
   const pathMatch = findExecutableOnPath([binName]);
   if (pathMatch) return pathMatch;
@@ -141,6 +154,25 @@ function hayabusaAssetPattern(platform, arch) {
   return null;
 }
 
+// Wrap a TLS / network error in a clear, actionable message. "Self-signed cert" errors
+// are common on enterprise/DFIR networks with TLS-intercepting proxies (Zscaler, etc.)
+function wrapDownloadError(err) {
+  const msg = err?.message || String(err);
+  if (/self.signed|DEPTH_ZERO_SELF_SIGNED|CERT_|unable to verify|certificate/i.test(msg)) {
+    return new Error(
+      "Failed to download Hayabusa: your network uses TLS inspection (self-signed certificate in chain). " +
+      "Hayabusa is bundled with the app — if you see this the bundled binary could not be located. " +
+      "Try restarting the app; if the problem persists, manually install Hayabusa from " +
+      "https://github.com/Yamato-Security/hayabusa/releases and place it at " +
+      "~/Library/Application Support/irflow-timeline/hayabusa/hayabusa."
+    );
+  }
+  if (/ENOTFOUND|ECONNREFUSED|ETIMEDOUT|network/i.test(msg)) {
+    return new Error(`Failed to download Hayabusa: no internet access (${msg}). The bundled binary should work — try restarting the app.`);
+  }
+  return err;
+}
+
 async function downloadHayabusa(onProgress) {
   const destDir = getHayabusaDir();
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
@@ -153,7 +185,12 @@ async function downloadHayabusa(onProgress) {
   onProgress?.("fetching", "Fetching latest Hayabusa release info...");
 
   const apiUrl = "https://api.github.com/repos/Yamato-Security/hayabusa/releases/latest";
-  const releaseData = await fetchJson(apiUrl);
+  let releaseData;
+  try {
+    releaseData = await fetchJson(apiUrl);
+  } catch (err) {
+    throw wrapDownloadError(err);
+  }
 
   const asset = releaseData.assets?.find((candidate) =>
     candidate.name.includes(assetPattern)
@@ -215,7 +252,7 @@ async function downloadHayabusa(onProgress) {
     if (/SHA-256 mismatch/i.test(err.message)) {
       throw new Error(`Hayabusa integrity check failed — the download was corrupted or tampered with and has been discarded. ${err.message}`);
     }
-    throw new Error(`Download failed: ${err.message}`);
+    throw wrapDownloadError(err);
   }
 
   if (!fs.existsSync(archivePath)) throw new Error("Download failed: file not created");
