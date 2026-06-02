@@ -68,7 +68,11 @@ description: Keyboard shortcuts reference for IRFlow Timeline — file operation
 |----------|--------|
 | `Cmd+H` | Toggle histogram |
 
-Analysis tools are grouped under the **Tools** menu in four sections: **Analysis** (Stack Values, Gap Analysis, Log Sources, Burst Detection), **Detection** (Sigma Scan), **Platforms** (Process Inspector, Lateral Movement Tracker, Persistence Analyzer, RDP Bitmap Cache, and the raw $MFT/$J NTFS tools), and **Export** (Generate Report).
+Analysis tools are grouped under the **Tools** menu in four sections: **Analysis** (Stack Values, Gap Analysis, Log Sources, Burst Detection), **Detection** (Sigma Scan), **Platforms** (Windows, Linux, macOS, and Cloud — Windows tools are active; other OS groups are placeholders), and **Export** (Generate Report).
+
+![Tools menu with Analysis, Detection, Platforms (Windows, Linux, macOS, Cloud), and Export sections](/dfir-tips/Analysis-Button-NewUI.png)
+
+Windows platform tools include Process Inspector, Lateral Movement Tracker, Persistence Analyzer, RDP Bitmap Cache, plus **Master File Table** and **USN Journal** submenus for raw NTFS analysis. See [Virtual Grid — Tools](/features/virtual-grid#tools) and [NTFS Analysis](/features/ntfs-analysis).
 
 ## Help
 

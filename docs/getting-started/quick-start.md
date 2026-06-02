@@ -87,9 +87,13 @@ Click the **histogram toggle** button in the toolbar to open the timeline visual
 
 ## Run a Detection Scan
 
-Open the **Tools** menu to run analysis. Tools are grouped into **Analysis** (Stack Values, Gap Analysis, Log Sources, Burst Detection), **Detection** (Sigma Scan), **Platforms** (Process Inspector, Lateral Movement Tracker, Persistence Analyzer, RDP Bitmap Cache, and raw `$MFT`/`$J` NTFS tools), and **Export** (Generate Report).
+Open the **Tools** menu to run analysis. Tools are grouped into four sections — **Analysis** (timeline-wide analytics), **Detection** (Sigma Scan), **Platforms** (OS-specific forensics), and **Export** (HTML report).
 
-For a fast first pass, choose **Tools > Sigma Scan**. Point it at a folder of raw `.evtx` files (bundled Hayabusa engine) or at your current timeline tab (in-app JS Sigma engine), pick the **Fast high-confidence only** preset, and run — findings open in a MITRE ATT&CK-mapped triage dashboard. See [Sigma Detection](/features/sigma-detection) for the full workflow.
+![Tools menu with Analysis, Detection, Platforms (Windows, Linux, macOS, Cloud), and Export sections](/dfir-tips/Analysis-Button-NewUI.png)
+
+Under **Platforms → Windows** you will find Process Inspector, Lateral Movement Tracker, Persistence Analyzer, RDP Bitmap Cache, and nested **Master File Table** / **USN Journal** menus for raw NTFS artifacts. Linux, macOS, and Cloud groups list upcoming analyzers as placeholders.
+
+For a fast first pass, choose **Tools → Detection → Sigma Scan**. Point it at a folder of raw `.evtx` files (bundled Hayabusa engine) or at your current timeline tab (in-app JS Sigma engine), pick the **Fast high-confidence only** preset, and run — findings open in a MITRE ATT&CK-mapped triage dashboard. See [Sigma Detection](/features/sigma-detection) for the full workflow.
 
 ## Next Steps
 

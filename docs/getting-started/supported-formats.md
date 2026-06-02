@@ -153,7 +153,9 @@ Native binary parsing of raw NTFS Master File Table files. No need to pre-proces
 
 ### NTFS Artifact Analysis Tools
 
-When a raw `$MFT` is loaded, additional analysis tools become available under Tools → NTFS Artifacts:
+When a raw `$MFT` is loaded, additional analysis tools become available under **Tools → Platforms → Windows → Master File Table**:
+
+![Tools menu with platform-segregated Analysis and Windows NTFS submenus](/dfir-tips/Analysis-Button-NewUI.png)
 
 - **Extract Resident Data** — extract files stored inside MFT records
 - **Ransomware Analysis** — detect encryption patterns by extension

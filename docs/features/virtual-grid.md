@@ -53,16 +53,49 @@ The menu bar provides access to all application features through five dropdown m
 
 ### Tools
 
+The **Tools** menu is organized into four sections so timeline-wide analytics stay separate from platform-specific forensics as IRFlow scales beyond Windows.
+
+![Tools menu with Analysis, Detection, Platforms (Windows, Linux, macOS, Cloud), and Export sections](/dfir-tips/Analysis-Button-NewUI.png)
+
+#### Analysis
+
+Timeline-wide analytics that work on any imported tab (CSV, EVTX, XLSX, Plaso, etc.):
+
 | Item | Description |
 |------|-------------|
 | **Stack Values** | Frequency analysis of unique values in any column |
 | **Gap Analysis** | Detect periods of unusual inactivity in the timeline |
 | **Log Sources** | Gantt-style heatmap of log source coverage across time |
 | **Burst Detection** | Identify abnormal spikes in event volume |
+| **AI Analyst** | Coming soon (disabled placeholder) |
+
+#### Detection
+
+| Item | Description |
+|------|-------------|
+| **Sigma Scan** | Dual-engine Sigma detection — Hayabusa over raw EVTX folders or the in-app JS engine on imported timelines |
+
+#### Platforms
+
+Platform-specific analyzers are grouped under collapsible OS sections. **Windows** is fully enabled today; **Linux**, **macOS**, and **Cloud** show planned analyzers as disabled placeholders for future releases.
+
+**Windows** includes:
+
+| Item | Description |
+|------|-------------|
 | **Process Inspector** | Parent-child process hierarchy with MITRE ATT&CK detection |
 | **Lateral Movement Tracker** | Network graph of host-to-host logon activity with attack pattern detection |
 | **Persistence Analyzer** | Automated detection of 30+ persistence techniques with risk scoring |
-| **NTFS Analysis** | Ransomware analysis, timestomping detection, ADS analyzer, USN Journal analysis, file activity heatmap, resident data extraction (available when MFT/$J data is loaded) |
+| **RDP Bitmap Cache** | Recover bitmap tiles from RDP cache artifacts (`bmc-tools`) |
+| **Master File Table** (submenu) | Ransomware analysis, timestomping, file activity heatmap, ADS analyzer, extract resident data — requires a raw `$MFT` tab |
+| **USN Journal** (submenu) | USN Journal analysis with UsnJrnl Rewind path reconstruction — requires a raw `$J` tab |
+
+See [NTFS Analysis](/features/ntfs-analysis) for the MFT and USN Journal tools.
+
+#### Export
+
+| Item | Description |
+|------|-------------|
 | **Generate Report** | Create an HTML investigation report from bookmarks and tags |
 
 ### Help
