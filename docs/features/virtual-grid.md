@@ -48,8 +48,12 @@ The menu bar provides access to all application features through five dropdown m
 | **Export Selected Rows** | Export selected rows as CSV via save dialog |
 | **IOC Matching** | Scan timeline data for Indicators of Compromise |
 | **Bulk Tag / Bookmark** | Apply tags or bookmarks to rows by time range |
-| **Pivot ±N Minutes** | Filter to a time window around the selected row |
+| **Pivot ±N Minutes** | Filter to a time window around the selected row (requires a selected row with a timestamp column) |
 | **Find Duplicates** | Identify repeated values in any column |
+
+![Proximity pivot dialog to filter the grid to a time window around a selected row](/dfir-tips/Proximity-pivot.png)
+
+Select a row, then choose **Actions → Pivot ±N Minutes** to open the proximity dialog. Pick a window (for example ±5 or ±15 minutes) and apply — a **Proximity** chip appears in the toolbar showing the active window around your pivot timestamp.
 
 ### Tools
 
@@ -67,7 +71,6 @@ Timeline-wide analytics that work on any imported tab (CSV, EVTX, XLSX, Plaso, e
 | **Gap Analysis** | Detect periods of unusual inactivity in the timeline |
 | **Log Sources** | Gantt-style heatmap of log source coverage across time |
 | **Burst Detection** | Identify abnormal spikes in event volume |
-| **AI Analyst** | Coming soon (disabled placeholder) |
 
 #### Detection
 
@@ -77,7 +80,9 @@ Timeline-wide analytics that work on any imported tab (CSV, EVTX, XLSX, Plaso, e
 
 #### Platforms
 
-Platform-specific analyzers are grouped under collapsible OS sections. **Windows** is fully enabled today; **Linux**, **macOS**, and **Cloud** show planned analyzers as disabled placeholders for future releases.
+Platform-specific analyzers are grouped under collapsible OS sections. **Windows** is fully enabled today; **Linux**, **macOS**, and **Cloud** list upcoming analyzers as disabled menu placeholders until those platforms ship in a future release.
+
+![Tools Platforms section expanded showing Windows tools active and Linux, macOS, and Cloud placeholder groups](/dfir-tips/Platform-PLaceholders.png)
 
 **Windows** includes:
 

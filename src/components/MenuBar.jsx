@@ -202,8 +202,6 @@ export default function MenuBar({
       { label: "Burst Detection", icon: ic(<><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill={th.accent+"33"}/></>, th.danger), action: () => {
         if (ct?.dataReady && ct?.tsColumns?.size) setModal(openBurstAnalysisModal([...ct.tsColumns][0]));
       }, disabled: !ct?.dataReady || !ct?.tsColumns?.size },
-      // AI Analyst — paused for a future release. Item kept (disabled) as a teaser.
-      { label: "AI Analyst (Coming Soon)", icon: ic(<><path d="M12 3a7 7 0 0 0-7 7v3a4 4 0 0 0 4 4h1v-5H6v-2a6 6 0 0 1 12 0v2h-4v5h1a4 4 0 0 0 4-4v-3a7 7 0 0 0-7-7z" fill={th.accent+"18"}/><path d="M9 21h6"/><path d="M10 17v2M14 17v2"/></>, th.accent), action: () => {}, disabled: true },
       // ── Detection — cross-platform threat detection. Sigma rules span Windows EVTX, Linux
       //    auditd, macOS & cloud, so this lives outside the Windows platform group. ──
       { section: "Detection" },

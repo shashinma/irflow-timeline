@@ -12,8 +12,17 @@ The Lateral Movement Tracker visualizes network logon activity across your envir
 
 ## Opening the Tracker
 
-- **Menu:** Tools > Lateral Movement Tracker
+- **Menu:** **Tools → Platforms → Windows → Lateral Movement Tracker**
+- **Capability launcher:** **Lateral Movement** on the home screen (after a timeline tab is loaded)
 - Supports 16 event IDs across Windows Security, TerminalServices, and RDP logs
+
+## Multi-Source Correlation
+
+Correlate logon and lateral-movement evidence across **multiple open tabs** — for example Security EVTX, Sysmon, and Hayabusa output — in a single tracker run instead of analyzing one tab in isolation.
+
+![Lateral Movement Tracker multi-source setup with tab checkboxes to include Security, Sysmon, and other loaded timelines](/dfir-tips/Lateral-Movement-Multi-Source.png)
+
+In the tracker configuration phase, enable **Multi-source** and select the tabs to merge. Each tab’s format (raw EVTX, EvtxECmd, Hayabusa, Chainsaw, etc.) is detected automatically so edges and sessions stitch together correctly.
 
 ## Detection Rules
 
@@ -183,6 +192,8 @@ Click any host in the Network Graph to see that host's individual telemetry cove
 ## Sub-Tabs
 
 The tracker has seven sub-tabs (Exec Sessions and Findings only appear when detections are present). The UI tab order is: **Network Graph**, **RDP Sessions**, **Accounts**, **Chains**, **Exec Sessions**, **Connections**, **Findings**. The sections below describe each tab; numbering is independent of the UI ordering.
+
+![Lateral Movement Tracker sub-tabs including Network Graph, RDP Sessions, Accounts, Chains, Exec Sessions, Connections, and Findings with Telemetry Coverage above](/dfir-tips/Lateral-Movement-Tabs.png)
 
 ### 1. Network Graph
 

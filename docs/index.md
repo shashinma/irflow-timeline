@@ -52,6 +52,7 @@ features:
 - **NTFS Analysis Tools** — Six tools for raw `$MFT` and `$J` files: ransomware scanning, timestomping detection, file activity heatmaps, ADS analysis, USN Journal forensics with [UsnJrnl Rewind](https://cybercx.com.au/blog/ntfs-usnjrnl-rewind/) path reconstruction (11 categories), and resident data extraction for recovering deleted threat actor artifacts
 - **VirusTotal Integration** — Single and bulk IOC lookups with persistent cache, configurable rate limiting, color-coded verdict badges, and auto-tagging. Bulk lookups are now cancellable mid-retry and stop automatically if the window closes
 - **Auto-Update** — In-app update notifications with download progress and one-click install
+- **Capability launcher** — Home-screen shortcuts into Process Inspector, Lateral Movement, Sigma, NTFS tools, and more
 
 [Full changelog →](/about/changelog)
 

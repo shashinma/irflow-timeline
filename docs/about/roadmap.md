@@ -31,14 +31,15 @@ This page outlines the planned direction for IRFlow Timeline. Priorities may shi
 - Share `.tle` session files with annotations via a link
 - Real-time collaborative analysis for team-based investigations
 
----
-
-## Under Consideration
-
 ### AI-Assisted Analysis
+- Planned for a future release (not in the current app build)
 - LLM-powered summarization of tagged findings for report drafting
 - Natural language queries against timeline data ("show me all lateral movement after 3 AM")
 - Anomaly detection suggestions based on statistical patterns
+
+---
+
+## Under Consideration
 
 ### Plugin System
 - Extensible architecture for community-developed analysis modules

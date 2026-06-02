@@ -16,6 +16,14 @@ There are three ways to open a file:
 
 IRFlow Timeline will automatically detect the file format and begin streaming the import.
 
+## Capability Launcher
+
+When no timeline tab is active, the home view shows **capability cards** — shortcuts into the main investigation workflows without hunting through menus first.
+
+![Capability launcher with cards for Process Inspector, Lateral Movement, Persistence, Sigma, IOC Matching, Master File Table, USN Journal, and Open & Explore](/dfir-tips/Home-Capability-Launcher.png)
+
+Each card opens the relevant analyzer or file dialog. Cards that need an imported tab (for example Process Inspector or IOC Matching) guide you to load data first; **Sigma · Hayabusa** and **Open & Explore** work immediately.
+
 ## Import Progress
 
 During import you will see:

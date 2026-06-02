@@ -133,7 +133,6 @@ contextBridge.exposeInMainWorld("tle", {
   onSheetSelection: (cb) => ipcRenderer.on("sheet-selection", (_, d) => cb(d)),
   onRecentFilesUpdated: (cb) => ipcRenderer.on("recent-files-updated", (_, d) => cb(d)),
   onUsnPathsUpdated: (cb) => ipcRenderer.on("usn-paths-updated", (_, d) => cb(d)),
-  onSecurityEvtxDetected: (cb) => ipcRenderer.on("security-evtx-detected", (_, d) => cb(d)),
   onRwProgress: (cb) => ipcRenderer.on("rw-progress", (_, d) => cb(d)),
   onHmProgress: (cb) => ipcRenderer.on("hm-progress", (_, d) => cb(d)),
   onUpdaterState: (cb) => ipcRenderer.on("updater-state", (_, d) => cb(d)),

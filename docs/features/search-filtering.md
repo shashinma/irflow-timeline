@@ -142,7 +142,9 @@ Toggle `Cmd+B` to show only bookmarked rows. Useful for reviewing rows you've al
 
 ## Cross-Tab Search
 
-Use `Cmd+Shift+F` to search across all open tabs simultaneously. Results show the match count per tab, letting you quickly identify which timelines contain your search term.
+Use `Cmd+Shift+F` to open **Cross-Tab Search** and query all open tabs simultaneously. Results show the match count per tab, letting you quickly identify which timelines contain your search term.
+
+![Cross-Tab Search modal listing each open tab with match counts and a button to jump to hits](/dfir-tips/Cross-Tab-Search.png)
 
 ## Search Caching
 

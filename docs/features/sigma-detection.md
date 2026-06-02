@@ -13,7 +13,8 @@ It is a **dual-engine** feature:
 
 ## Opening the Sigma Scan
 
-- **Menu:** Tools > Sigma Scan
+- **Menu:** **Tools → Detection → Sigma Scan**
+- **Capability launcher:** **Sigma · Hayabusa** on the home screen
 
 When you open it, IRFlow Timeline picks a smart default: if a timeline tab is already loaded it pre-selects that tab as the scan target (one-click scan); otherwise it opens on **EVTX Folder** for a raw `.evtx` directory scan.
 
@@ -26,6 +27,12 @@ The modal has three top-level views, selectable from the toggle at the top:
 ![Sigma Scan configuration wizard showing the New Scan / Previous Scans / Detection Settings toggle, the three-step Configure → Scan → Findings flow, the EVTX Folder / EvtxECmd Output Files / Current Timeline Tab scan targets, and a green Scan Ready panel summarizing target, engine, severity, and rule counts](/dfir-tips/Sigma-Scan-Home.png)
 
 The wizard walks through three steps — **Configure** (target + detection profile), **Scan** (progress), and **Findings** (results) — with a **Scan Ready** panel summarizing the chosen target, engine, severity, statuses, rule count, and row cap before you run.
+
+### Scan progress
+
+While a scan runs, the wizard stays on the **Scan** step with live progress from the Hayabusa subprocess or the in-app JS Sigma engine. You can cancel in flight; large EVTX folders may take several minutes.
+
+![Sigma Scan in progress showing scan step, engine status, and progress indicators during an active detection run](/dfir-tips/Sigma-Scanning-InProgress.png)
 
 ## Scan Targets
 

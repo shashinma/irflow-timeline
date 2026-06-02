@@ -728,7 +728,7 @@ export default function App() {
       "trigger-vt-settings",
       "vt-progress", "vt-complete",
       "recent-files-updated", "extract-resident-progress",
-      "usn-paths-updated", "security-evtx-detected", "rw-progress", "hm-progress",
+      "usn-paths-updated", "rw-progress", "hm-progress",
       "updater-state", "job-progress", "analysis-progress", "process-tree-complete",
     ];
 
@@ -865,8 +865,7 @@ export default function App() {
       // ── Home-screen capability launch ───────────────────────────────────────
       // If this import was kicked off from a home-screen capability tile, open that
       // analyzer now that the tab is ready (dataReady was set true above). This fires
-      // at import-COMPLETE, so it is strictly safer than the _securityEvtxHint path,
-      // which opens mid-parse before dataReady. Column mappings are pre-detected so
+      // at import-COMPLETE when dataReady is true. Column mappings are pre-detected so
       // analyzers that need them (Process Inspector, Lateral Movement) never open with
       // an empty schema. Format-specific analyzers fall back to a toast + the grid.
       const pendingCap = pendingCapabilityRef.current;
@@ -931,12 +930,6 @@ export default function App() {
           t.id === tabId ? { ...t, rows: result.rows, rowOffset: 0, totalFiltered: result.totalFiltered, usnResolveStats: resolveStats || t.usnResolveStats || null } : t
         ));
       }).catch(() => {});
-    });
-    tle.onSecurityEvtxDetected(({ tabId, fileName }) => {
-      // Show a brief toast notifying analyst that Security/logon data was loaded
-      setTabs((prev) => prev.map((t) =>
-        t.id === tabId ? { ...t, _securityEvtxHint: true } : t
-      ));
     });
     tle.onRwProgress((p) => {
       setModal(updateModal("ransomware", (prev) => (prev.phase === "scanning" || prev.phase === "loading") ? { rwProgress: p } : null));
@@ -2656,23 +2649,6 @@ export default function App() {
           <span style={{ color: th.textDim }}>
             Large EVTX fast import is active. The Message column uses compact structured summaries; full analyzer fields are preserved.
           </span>
-        </div>
-      )}
-
-      {/* Security.evtx auto-prompt — suggest Lateral Movement Tracker */}
-      {ct?._securityEvtxHint && !modal && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 14px", background: `${th.accent}0a`, borderBottom: `1px solid ${th.accent}18`, fontSize: 11, fontFamily: "-apple-system, sans-serif" }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={th.accent} strokeWidth="2" strokeLinecap="round">
-            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
-          <span style={{ color: th.textDim }}>Security logon data detected —</span>
-          <button onClick={() => {
-            up("_securityEvtxHint", false);
-            setModal(openLateralMovementModal());
-          }} style={{ background: "none", border: "none", color: th.accent, cursor: "pointer", fontWeight: 600, fontSize: 11, fontFamily: "-apple-system, sans-serif", padding: 0, textDecoration: "underline" }}>
-            Analyze Lateral Movement
-          </button>
-          <button onClick={() => up("_securityEvtxHint", false)} style={{ marginLeft: "auto", background: "none", border: "none", color: th.textMuted, cursor: "pointer", fontSize: 11, padding: "0 4px" }}>{"\u2715"}</button>
         </div>
       )}
 

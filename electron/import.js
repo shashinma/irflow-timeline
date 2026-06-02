@@ -210,16 +210,6 @@ async function startImport(filePath, tabId, fileName, sheetName, preFileSize, de
       resolveStats,
     });
 
-    // Security.evtx auto-detection: prompt analyst to open Lateral Movement Tracker
-    // Detect by filename pattern or by checking if the dataset has Security logon event columns
-    const isSecurityEvtx = /security\.evtx$/i.test(filePath)
-      || (/\.evtx$/i.test(filePath) && result.headers?.some(h => /^TargetUserName$/i.test(h)) && result.headers?.some(h => /^LogonType$/i.test(h)));
-    const isEvtxECmdWithLogons = result.headers?.some(h => /^RemoteHost$/i.test(h))
-      && result.headers?.some(h => /^PayloadData1$/i.test(h));
-    if (isSecurityEvtx || isEvtxECmdWithLogons) {
-      safeSend("security-evtx-detected", { tabId, fileName, isSecurityEvtx, isEvtxECmd: isEvtxECmdWithLogons });
-    }
-
     // Defer index/FTS builds when more imports are queued to avoid memory spikes
     if (importQueue.length > 0) {
       dbg("IMPORT", `Deferring index/FTS build for ${tabId} (${importQueue.length} imports queued)`);
