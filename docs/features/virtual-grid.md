@@ -115,12 +115,14 @@ See [NTFS Analysis](/features/ntfs-analysis) for the MFT and USN Journal tools.
 
 ### Toolbar Controls
 
-In addition to the menu bar, the toolbar contains:
+To the right of the menu capsule, the **settings toolbar** mirrors common [Preferences](/reference/preferences):
 
-- **Date/time format** selector and **timezone** selector
-- **Theme toggle** (dark/light)
-- **Font size** controls (decrease/increase)
-- **Histogram toggle** — show or hide the timeline histogram visualization
+- **Datetime format** and **timezone** dropdowns (same options as macOS **Tools** menu)
+- **Theme toggle** — **☀ / 🌙** button (dark/light); also available as **Tools → Theme** on the macOS menu bar
+- **Font size** — **− / +** with live px readout; **Cmd+Plus** / **Cmd+-** via macOS **Tools → Font Size**
+- **Histogram** — bar-chart icon toggles the timeline panel (also **Tools → Toggle Histogram** on the macOS menu bar)
+
+Temp storage for large imports is configured only on the macOS menu bar: **Tools → Set Temp Storage Folder…** (see [Performance Tips](/reference/performance-tips#temp-storage-folder)).
 
 ## How It Works
 

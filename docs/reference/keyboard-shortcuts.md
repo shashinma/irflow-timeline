@@ -12,7 +12,7 @@ description: Keyboard shortcuts reference for IRFlow Timeline — file operation
 | `Cmd+E` | Export filtered data |
 | `Cmd+S` | Save session |
 | `Cmd+Shift+O` | Load session |
-| `Cmd+Shift+R` | Generate report |
+| `Cmd+Shift+R` | Generate HTML report (macOS menu bar → **File → Generate Report…**) |
 
 ## Navigation
 
@@ -62,13 +62,15 @@ description: Keyboard shortcuts reference for IRFlow Timeline — file operation
 | Deselect All | Clear selection (Actions menu) |
 | Invert Selection | Toggle selection state (Actions menu) |
 
-## Tools
+## Tools & display
 
-| Shortcut | Action |
-|----------|--------|
-| `Cmd+H` | Toggle histogram |
+| Shortcut / control | Action |
+|--------------------|--------|
+| Toolbar histogram icon | Toggle timeline histogram (no keyboard shortcut) |
+| `Cmd+Plus` / `Cmd+-` | Increase / decrease font size (macOS **Tools → Font Size**) |
+| Toolbar **☀ / 🌙** | Toggle dark / light theme |
 
-Analysis tools are grouped under the **Tools** menu in four sections: **Analysis** (Stack Values, Gap Analysis, Log Sources, Burst Detection), **Detection** (Sigma Scan), **Platforms** (Windows, Linux, macOS, and Cloud — Windows tools are active; other OS groups are placeholders), and **Export** (Generate Report).
+Analysis tools in the **in-app Tools** menu are grouped in four sections: **Analysis** (Stack Values, Gap Analysis, Log Sources, Burst Detection), **Detection** (Sigma Scan), **Platforms** (Windows, Linux, macOS, and Cloud — Windows tools are active; other OS groups are placeholders), and **Export** (Generate Report).
 
 ![Tools menu with Analysis, Detection, Platforms (Windows, Linux, macOS, Cloud), and Export sections](/dfir-tips/Analysis-Button-NewUI.png)
 
@@ -86,10 +88,10 @@ The **Help** menu also includes Quick Help, **Check for Updates…**, Website, a
 
 | Shortcut | Action |
 |----------|--------|
-| `Cmd+,` | Preferences |
 | `Cmd+Q` | Quit |
 | `Cmd+M` | Minimize window |
-| `Cmd+Shift+F` | Toggle fullscreen |
+
+Display preferences (datetime format, timezone, theme, font size, temp storage folder) are in the [Preferences](/reference/preferences) guide — mostly via the in-app toolbar and the macOS **Tools** menu, not a single Preferences window.
 
 ## Search Syntax
 

@@ -158,17 +158,29 @@ SQLite pragmas are tuned per-phase for maximum throughput:
 | **Cache size** | 256 MB | Query cache |
 | **MMAP size** | 512 MB | Memory-mapped reads |
 
-### Temporary Files
+### Temp storage folder
 
-Each tab creates a temporary SQLite database file. These are stored in the system temp directory and cleaned up when the tab is closed or the app exits.
+Each tab creates a temporary SQLite database plus column indexes and (after import) an FTS5 index. By default these files live under the macOS system temp directory. For large cases, point temp storage at an external or scratch volume so imports do not fill your boot disk.
 
-For large datasets, ensure you have sufficient disk space:
+**macOS menu bar → Tools → Set Temp Storage Folder…**
 
-| Dataset Size | Approximate DB Size |
-|-------------|-------------------|
-| 1 GB CSV | ~1.5 GB SQLite DB |
-| 10 GB CSV | ~15 GB SQLite DB |
-| 30 GB+ CSV | ~45 GB+ SQLite DB |
+- Applies to **new imports only** (existing tabs keep their current database path)
+- **Tools → Use Default Temp Folder** clears a custom path
+- The read-only **Temp Storage:** label shows the active setting
+
+IRFlow estimates required free space before import (roughly a few times the source file size) and blocks the import with a clear error if the temp volume is too full.
+
+See [Preferences — Temp storage folder](/reference/preferences#temp-storage-folder) for full details and the optional `TLE_TEMP_DIR` environment variable.
+
+#### Approximate on-disk size per tab
+
+| Dataset Size | Approximate DB + indexes |
+|-------------|-------------------------|
+| 1 GB CSV | ~1.5 GB |
+| 10 GB CSV | ~15 GB |
+| 30 GB+ CSV | ~45 GB+ |
+
+Temp databases are removed when you close the tab or quit the app.
 
 ### Search Result Caching
 
@@ -190,4 +202,4 @@ The 4 most recent search queries per tab are cached in memory. This provides ins
 | **RAM** | 8 GB | 16-32 GB |
 | **Storage** | SSD (any) | NVMe SSD |
 | **CPU** | Any 64-bit | Apple Silicon (M1+) |
-| **Free disk** | 2x largest file | 3x total evidence size |
+| **Free disk** | 2x largest file on temp volume | 3x total evidence size (use **Set Temp Storage Folder…** if needed) |
